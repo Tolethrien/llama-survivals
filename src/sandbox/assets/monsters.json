@@ -1,0 +1,5 @@
+{
+    "ork"   :{"x":  0,"y":0,"width":78,"height":138},
+    "player":{"x": 78,"y":0,"width":32,"height": 75},
+    "flesh" :{"x":111,"y":0,"width":49,"height": 81}
+}
