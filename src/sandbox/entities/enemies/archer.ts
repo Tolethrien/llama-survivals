@@ -34,14 +34,7 @@ export default class Archer extends DogmaEntity {
         physical: 0,
         poison: 0,
       },
-      resist: {
-        cold: 0,
-        energy: 0,
-        fire: 0,
-        heal: 0,
-        physical: 0,
-        poison: 0,
-      },
+      resist: { cold: 0, energy: 0, fire: 0, heal: 0, physical: 0, poison: 0 },
       swingSpeedInc: 0,
     });
     this.addComponent("EnemyAI", {

@@ -1,10 +1,11 @@
 import { SystemComponent } from "@/core/dogma/system";
-import Vec2D from "@/utils/vec2D";
-import { getRandomInt } from "@/utils/utils";
 import InputManager from "@/core/engine/inputManager";
 import BaseAttack from "../entities/baseAttack";
 import AuroraCamera from "@/core/aurora/camera";
 import { RENDER_LAYER } from "../scenes/battleScene";
+import AxiomMath from "@/core/axiom/math";
+import Vec2 from "@/core/axiom/vec2";
+import { getColliderCenter } from "@/utils/utils";
 
 export type DamageImpactType = "impact" | "overTime";
 export type AttackRange = "melee" | "projectile";
@@ -66,7 +67,7 @@ export const ATT: Record<string, ATTEntry> = {
     layer: "charAttacks",
     size: { width: 64, height: 64 },
     colliderOffsets: {
-      size: { width: -10, height: -20 },
+      size: { width: -10, height: -10 },
       pos: { x: 0, y: -5 },
     },
   },
@@ -80,16 +81,32 @@ export const ATT: Record<string, ATTEntry> = {
  * random off screen + toward center
  */
 export default class AttackManager {
+  //TODO: to jest swietne miejsce do object pooling bo to sie bedzie tworzylo w dziesiatkach co frame
+  //TODO: nie dziala radom point i towards target ob uzywa pozycji castera do obliczen a nie randomPointu
   public static build(
     ability: SystemComponent<"Ability">,
     relation: SystemComponent<"Relation">,
     casterTransform: SystemComponent<"Transform">,
+    casterCollider: SystemComponent<"Collider">,
     targetTransform: SystemComponent<"Transform">,
+    targetCollider: SystemComponent<"Collider">,
   ) {
-    //TODO: to jest swietne miejsce do object pooling bo to sie bedzie tworzylo w dziesiatkach co frame
-    //TODO: nie dziala radom point i towards target ob uzywa pozycji castera do obliczen a nie randomPointu
-    const pos = this.getSpawnPoint(ability, casterTransform, targetTransform);
-    const dir = this.getDirection(ability, casterTransform, targetTransform);
+    const displayData = ATT[ability.attackMeta.name];
+    const pos = this.getSpawnPoint(
+      ability,
+      casterTransform,
+      casterCollider,
+      targetTransform,
+      targetCollider,
+      displayData.size,
+    );
+    const dir = this.getDirection(
+      ability,
+      casterTransform,
+      casterCollider,
+      targetTransform,
+      targetCollider,
+    );
     const builder = new BaseAttack({
       abilityID: ability.ID,
       casterID: relation.parentChar!,
@@ -115,55 +132,43 @@ export default class AttackManager {
     });
     return builder;
   }
+
   private static getSpawnPoint(
     ability: SystemComponent<"Ability">,
     casterTransform: SystemComponent<"Transform">,
+    casterCollider: SystemComponent<"Collider">,
     targetTransform: SystemComponent<"Transform">,
+    targetCollider: SystemComponent<"Collider">,
+    attackSize: Size2D,
   ): Position2D {
     switch (ability.spawnMode.where) {
       case "onSelf": {
+        const casterCenter = getColliderCenter(casterTransform, casterCollider);
         return {
-          x:
-            casterTransform.position.x +
-            casterTransform.size.width / 2 -
-            casterTransform.size.width / 2,
-          y:
-            casterTransform.position.y +
-            casterTransform.size.height / 2 -
-            casterTransform.size.height / 2,
+          x: casterCenter.x - attackSize.width / 2,
+          y: casterCenter.y - attackSize.height / 2,
         };
       }
       case "onTarget": {
+        const targetCenter = getColliderCenter(targetTransform, targetCollider);
         return {
-          x:
-            targetTransform.position.x +
-            targetTransform.size.width / 2 -
-            casterTransform.size.width / 2,
-          y:
-            targetTransform.position.y +
-            targetTransform.size.height / 2 -
-            casterTransform.size.height / 2,
+          x: targetCenter.x - attackSize.width / 2,
+          y: targetCenter.y - attackSize.height / 2,
         };
       }
       case "randomPoint": {
         const viewBox = AuroraCamera.getViewBox();
-        const boundaries = viewBox.h / 100;
-        const x = getRandomInt(
-          viewBox.x + boundaries,
-          viewBox.x + viewBox.w - boundaries,
-        );
-        const y = getRandomInt(
-          viewBox.y + boundaries / 2,
-          viewBox.y + viewBox.h - boundaries / 2,
-        );
-        return { x, y };
+        return AxiomMath.randomInRectPoint(viewBox);
       }
     }
   }
+
   private static getDirection(
     ability: SystemComponent<"Ability">,
     casterTransform: SystemComponent<"Transform">,
+    casterCollider: SystemComponent<"Collider">,
     targetTransform: SystemComponent<"Transform">,
+    targetCollider: SystemComponent<"Collider">,
   ): Position2D {
     switch (ability.directionStrategy) {
       case "none": {
@@ -175,15 +180,13 @@ export default class AttackManager {
       }
       case "towardsMouse": {
         const dir = InputManager.getMouseDirFromCenter();
-        const vec = Vec2D.create([dir.x, dir.y]);
-        const length = vec.length();
+        const length = Vec2.create(dir.x, dir.y).length();
         return { x: dir.x / length, y: dir.y / length };
       }
       case "towardsTarget": {
-        const posDiff = Vec2D.create([
-          targetTransform.position.x - casterTransform.position.x,
-          targetTransform.position.y - casterTransform.position.y,
-        ]);
+        const casterCenter = getColliderCenter(casterTransform, casterCollider);
+        const targetCenter = getColliderCenter(targetTransform, targetCollider);
+        const posDiff = targetCenter.sub(casterCenter);
         const length = posDiff.length();
         return { x: posDiff.x / length, y: posDiff.y / length };
       }

@@ -2,29 +2,35 @@ import DogmaSystem, {
   InternalDSProps,
   SystemComponent,
 } from "@/core/dogma/system";
-import { assert } from "@/utils/utils";
+import { assert, createColliderBox } from "@/utils/utils";
 import { EnemyState } from "../components/enemyAI";
-import SpatialHash from "@/utils/spatialHash";
-import Time from "@/core/engine/time";
+import SpatialGrid from "@/core/axiom/spatialGridFrame";
+import AxiomMath from "@/core/axiom/math";
 export type EnemyPerceptionData = {
   combat: Set<Symbol>;
   swarm: Set<Symbol>;
 };
+
 export default class AIPerception extends DogmaSystem {
   private perceptionData: EnemyPerceptionData = {
     combat: new Set(),
     swarm: new Set(),
   };
-  declare private spacialHash: SpatialHash;
+
+  declare private spatialGrid: SpatialGrid<Symbol>;
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
   }
 
   public onStart(): void {
-    this.spacialHash = new SpatialHash({ cellSize: 32 });
-    this.setSharedData<{ spacialHash: SpatialHash }>("scene", "spacialHash", {
-      spacialHash: this.spacialHash,
-    });
+    this.spatialGrid = new SpatialGrid({ width: 32, height: 32 });
+    this.setSharedData<{ spatialGrid: SpatialGrid<Symbol> }>(
+      "scene",
+      "spatialGrid",
+      {
+        spatialGrid: this.spatialGrid,
+      },
+    );
     this.subscribeToPhase({
       callback: this.perception.bind(this),
       phase: "preUpdate",
@@ -69,15 +75,11 @@ export default class AIPerception extends DogmaSystem {
     transform: SystemComponent<"Transform">,
     collider: SystemComponent<"Collider">,
   ) {
-    const rect = this.getColliderRect(
-      transform.position,
-      transform.size,
-      collider,
-    );
-    this.spacialHash.addToGrid({
-      position: rect.position,
-      size: rect.size,
+    const box = createColliderBox(transform, collider);
+    this.spatialGrid.insert({
+      bounds: box,
       ID,
+      data: ID,
     });
   }
 
@@ -86,10 +88,10 @@ export default class AIPerception extends DogmaSystem {
     playerTransform: SystemComponent<"Transform">,
     enemy: SystemComponent<"EnemyAI">,
   ) {
-    const diffX = playerTransform.position.x - transform.position.x;
-    const diffY = playerTransform.position.y - transform.position.y;
-    const distSq = diffX * diffX + diffY * diffY;
-
+    const distSq = AxiomMath.distanceSquared2d(
+      transform.position,
+      playerTransform.position,
+    );
     const attackRangeSq = enemy.attackRange * enemy.attackRange;
     const flankRangeSq = enemy.flankRange * enemy.flankRange;
 
@@ -104,28 +106,6 @@ export default class AIPerception extends DogmaSystem {
   private clearPerception() {
     this.perceptionData.combat.clear();
     this.perceptionData.swarm.clear();
-    this.spacialHash.clearGrid();
-  }
-  private getColliderRect(
-    position: Position2D,
-    size: Size2D,
-    collider: SystemComponent<"Collider">,
-  ): { position: Position2D; size: Size2D } {
-    //TODO: specjalnei to zostawiam w kilku miejscach a nie robie w utils by pamietac ze po zbudowaniu biblio matmy to poczyscic
-    const colliderSize: Size2D = {
-      width: size.width + collider.sizeOffset.width,
-      height: size.height + collider.sizeOffset.height,
-    };
-    const center = {
-      x: position.x + size.width / 2 + collider.posOffset.x,
-      y: position.y + size.height / 2 + collider.posOffset.y,
-    };
-    return {
-      position: {
-        x: center.x - colliderSize.width / 2,
-        y: center.y - colliderSize.height / 2,
-      },
-      size: colliderSize,
-    };
+    this.spatialGrid.clear();
   }
 }

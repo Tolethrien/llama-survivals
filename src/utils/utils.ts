@@ -1,5 +1,5 @@
-import { SystemComponent } from "@/core/dogma/system";
-
+import Vec2 from "@/core/axiom/vec2";
+import { SystemComponent } from "@dogma/system";
 export function assert(condition: boolean, msg?: string): asserts condition {
   if (!condition) throw new Error(msg ?? "Assertion Failed");
 }
@@ -68,25 +68,73 @@ export function flatObjectToValues(obj: Object) {
   }
   return values;
 }
-export function getRandomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+export function createBoxFromTransform({
+  position,
+  size,
+}: SystemComponent<"Transform">): Box {
+  return {
+    x: position.x,
+    y: position.y,
+    w: size.width,
+    h: size.height,
+  };
 }
-export function mapRange(
-  value: number,
-  inMin: number,
-  inMax: number,
-  outMin: number,
-  outMax: number,
-  clamp: boolean = false,
-): number {
-  let mapped = ((value - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 
-  if (clamp) {
-    const min = Math.min(outMin, outMax);
-    const max = Math.max(outMin, outMax);
-    mapped = Math.max(min, Math.min(max, mapped));
+export function createColliderBox(
+  { position, size }: SystemComponent<"Transform">,
+  collider: SystemComponent<"Collider">,
+): Box {
+  const colliderWidth = size.width + collider.sizeOffset.width;
+  const colliderHeight = size.height + collider.sizeOffset.height;
+  return {
+    x: position.x + size.width / 2 + collider.posOffset.x - colliderWidth / 2,
+    y: position.y + size.height / 2 + collider.posOffset.y - colliderHeight / 2,
+    w: colliderWidth,
+    h: colliderHeight,
+  };
+}
+export function createColliderShape(
+  { position, size }: { position: Position2D; size: Size2D },
+  collider: SystemComponent<"Collider">,
+): Rect | Circle {
+  const w = size.width + collider.sizeOffset.width;
+  const h = size.height + collider.sizeOffset.height;
+  const centerX = position.x + size.width / 2 + collider.posOffset.x;
+  const centerY = position.y + size.height / 2 + collider.posOffset.y;
+
+  if (collider.shape === "circle") {
+    return { x: centerX, y: centerY, r: w / 2 }; // świadomie: promień = width, height ignorowany
   }
-  return mapped;
+  return { x: centerX, y: centerY, w, h, rotation: 0 };
+}
+export function getOrbitPosition(
+  orbit: SystemComponent<"Orbit">,
+  targetTransform: SystemComponent<"Transform">,
+  angleDeg: number,
+): Position2D {
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const centerX = targetTransform.position.x + targetTransform.size.width * 0.5;
+  const centerY =
+    targetTransform.position.y + targetTransform.size.height * 0.5;
+  return {
+    x:
+      centerX +
+      Math.sin(angleRad) * orbit.radius.x -
+      targetTransform.size.width / 2,
+    y:
+      centerY -
+      Math.cos(angleRad) * orbit.radius.y -
+      targetTransform.size.height / 2,
+  };
+}
+export function getColliderCenter(
+  { position, size }: { position: Position2D; size: Size2D },
+  collider: SystemComponent<"Collider">,
+): Vec2 {
+  return Vec2.create(
+    position.x + size.width / 2 + collider.posOffset.x,
+    position.y + size.height / 2 + collider.posOffset.y,
+  );
 }
 export function get8DirFromPosDiff(pos: Position2D) {
   const angle = Math.atan2(pos.y, pos.x);

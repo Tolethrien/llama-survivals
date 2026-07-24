@@ -5,7 +5,7 @@ import { RENDER_LAYER } from "../scenes/battleScene";
 export default class Player extends DogmaEntity {
   constructor() {
     super();
-    const pos: Position2D = { x: 300, y: 300 };
+    const pos: Position2D = { x: 1300, y: 1300 };
     this.setMarker("Player");
     this.addTag("Player");
     this.addTag("invincible");
@@ -38,7 +38,7 @@ export default class Player extends DogmaEntity {
       swingSpeedInc: 0,
     });
 
-    this.addComponent("Equipment", { slots: ["FireMachineGun", "Skulls"] });
+    this.addComponent("Equipment", { slots: ["Skulls"] });
     this.addComponent("Rigid", { speed: 300 });
     this.addComponent("Collider", {
       shape: "rect",

@@ -1,14 +1,14 @@
+import Vec2 from "@/core/axiom/vec2";
 import Dogma from "@/core/dogma/dogma";
 import DogmaSystem, {
   InternalDSProps,
   SystemComponent,
 } from "@/core/dogma/system";
 import InputManager from "@/core/engine/inputManager";
-import Time from "@/core/engine/time";
 import { assert } from "@/utils/utils";
-import Vec2D from "@/utils/vec2D";
 
 export default class GameInputs extends DogmaSystem {
+  private axis = Vec2.Zero;
   declare private playerRigid: SystemComponent<"Rigid">;
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
@@ -29,20 +29,17 @@ export default class GameInputs extends DogmaSystem {
     this.playerRigid = rigid;
   }
   public playerMovementInputs() {
-    let axis = Vec2D.create([0, 0]);
-    if (InputManager.isKeyHold("w")) axis = axis.sub([0, 1]);
-    if (InputManager.isKeyHold("s")) axis = axis.add([0, 1]);
-    if (InputManager.isKeyHold("a")) axis = axis.sub([1, 0]);
-    if (InputManager.isKeyHold("d")) axis = axis.add([1, 0]);
-
-    const length = axis.length();
+    this.axis.set(0, 0);
+    if (InputManager.isKeyHold("w")) this.axis.sub(0, 1);
+    if (InputManager.isKeyHold("s")) this.axis.add(0, 1);
+    if (InputManager.isKeyHold("a")) this.axis.sub(1, 0);
+    if (InputManager.isKeyHold("d")) this.axis.add(1, 0);
+    const length = this.axis.length();
     if (length > 0) {
-      axis = axis.div(length);
-      this.playerRigid.velocity.x = axis.x * this.playerRigid.speed;
-      this.playerRigid.velocity.y = axis.y * this.playerRigid.speed;
+      this.axis.divideScalar(length).scale(this.playerRigid.speed);
+      this.playerRigid.velocity.copy(this.axis);
     } else {
-      this.playerRigid.velocity.x = 0;
-      this.playerRigid.velocity.y = 0;
+      this.playerRigid.velocity.set(0, 0);
     }
   }
 }

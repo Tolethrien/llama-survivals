@@ -2,13 +2,16 @@ import AuroraCamera from "@/core/aurora/camera";
 import Aurora from "@/core/aurora/core";
 import Draw from "@/core/aurora/draw";
 import Renderer from "@/core/aurora/renderer/renderer";
+import AxiomMath from "@/core/axiom/math";
+import Vec2 from "@/core/axiom/vec2";
 import DogmaSystem, {
   InternalDSProps,
   SystemComponent,
 } from "@/core/dogma/system";
 import Time from "@/core/engine/time";
-import { mapRange } from "@/utils/utils";
+import { createColliderBox, getOrbitPosition } from "@/utils/utils";
 const DRAW_MARGIN = 128;
+const Y_SORT_FACTOR = 1000000;
 export default class Render extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
@@ -70,8 +73,14 @@ export default class Render extends DogmaSystem {
       );
       if (!renderPos) return;
 
+      const feetY = renderPos.y + transform.size.height;
+
       Draw.sprite({
-        position: { x: renderPos.x, y: renderPos.y, z: sprite.layer },
+        position: {
+          x: renderPos.x,
+          y: renderPos.y,
+          z: sprite.layer + feetY / Y_SORT_FACTOR,
+        },
         size: transform.size,
         textureToUse: sprite.spriteName,
         crop: sprite.crop,
@@ -81,7 +90,7 @@ export default class Render extends DogmaSystem {
   }
   private renderUI() {
     const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
-    const hp = mapRange(stats.currentHP, 0, stats.maxHP, 0, 50);
+    const hp = AxiomMath.map(stats.currentHP, 0, stats.maxHP, 0, 50);
     Draw.guiRect({
       position: {
         x: Aurora.canvas.width / 2 - 25 - 2,
@@ -106,52 +115,19 @@ export default class Render extends DogmaSystem {
     const targetTransform = this.getComponent(orbit.targetID, "Transform");
     if (!targetTransform) return null;
 
-    const lerpedAngle = this.lerpAngleDeg(
+    const lerpedAngle = AxiomMath.lerpAngle(
       orbit.prevAngle,
       orbit.angleDeg,
       alpha,
     );
-    return this.getOrbitPosition(orbit, targetTransform, lerpedAngle);
+    return getOrbitPosition(orbit, targetTransform, lerpedAngle);
   }
-  private lerpAngleDeg(prev: number, curr: number, alpha: number): number {
-    let delta = curr - prev;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-    return prev + delta * alpha;
-  }
-  private getOrbitPosition(
-    orbit: SystemComponent<"Orbit">,
-    targetTransform: SystemComponent<"Transform">,
-    angleDeg: number,
-  ): Position2D {
-    const angleRad = (angleDeg * Math.PI) / 180;
-    const centerX =
-      targetTransform.position.x + targetTransform.size.width * 0.5;
-    const centerY =
-      targetTransform.position.y + targetTransform.size.height * 0.5;
-    return {
-      x:
-        centerX +
-        Math.sin(angleRad) * orbit.radius.x -
-        targetTransform.size.width / 2,
-      y:
-        centerY -
-        Math.cos(angleRad) * orbit.radius.y -
-        targetTransform.size.height / 2,
-    };
-  }
+
   private lerpPos(
     transform: SystemComponent<"Transform">,
     alpha: number,
   ): Position2D {
-    return {
-      x:
-        transform.prevPosition.x +
-        (transform.position.x - transform.prevPosition.x) * alpha,
-      y:
-        transform.prevPosition.y +
-        (transform.position.y - transform.prevPosition.y) * alpha,
-    };
+    return Vec2.lerp(transform.prevPosition, transform.position, alpha).value;
   }
   private getVisiblePosition(
     pos: Position2D,
@@ -164,27 +140,6 @@ export default class Render extends DogmaSystem {
     if (distanceX > drawDistance.width || distanceY > drawDistance.height)
       return null;
     return pos;
-  }
-  private getColliderRect(
-    position: Position2D,
-    size: Size2D,
-    collider: SystemComponent<"Collider">,
-  ): { position: Position2D; size: Size2D } {
-    const colliderSize: Size2D = {
-      width: size.width + collider.sizeOffset.width,
-      height: size.height + collider.sizeOffset.height,
-    };
-    const center = {
-      x: position.x + size.width / 2 + collider.posOffset.x,
-      y: position.y + size.height / 2 + collider.posOffset.y,
-    };
-    return {
-      position: {
-        x: center.x - colliderSize.width / 2,
-        y: center.y - colliderSize.height / 2,
-      },
-      size: colliderSize,
-    };
   }
 
   private renderColliders(
@@ -208,36 +163,42 @@ export default class Render extends DogmaSystem {
           : this.lerpPos(transform, alpha);
       if (!basePos) return;
 
-      const colliderRect = this.getColliderRect(
-        basePos,
-        transform.size,
+      const feetY = basePos.y + transform.size.height;
+      const z = sprite.layer + feetY / Y_SORT_FACTOR + 0.001;
+
+      const box = createColliderBox(
+        { position: basePos, size: transform.size },
         collider,
       );
 
       const renderPos = this.getVisiblePosition(
-        colliderRect.position,
-        colliderRect.size,
+        { x: box.x, y: box.y },
+        { width: box.w, height: box.h },
         cameraPos,
         drawDistance,
       );
       if (!renderPos) return;
 
-      const debugTint: RGBA = [0, 255, 0, 120];
-      const z = sprite.layer + 0.001;
+      const debugTint = this.getColliderDebugTint(collider);
 
       if (collider.shape === "rect") {
         Draw.rect({
           position: { x: renderPos.x, y: renderPos.y, z },
-          size: colliderRect.size,
+          size: { width: box.w, height: box.h },
           tint: debugTint,
         });
       } else {
         Draw.circle({
           position: { x: renderPos.x, y: renderPos.y, z },
-          size: colliderRect.size,
+          size: { width: box.w, height: box.w },
           tint: debugTint,
         });
       }
     });
+  }
+  private getColliderDebugTint(collider: SystemComponent<"Collider">): RGBA {
+    if (collider.tags.has("attack")) return [255, 80, 80, 140]; // ataki — czerwony
+    if (collider.tags.has("Player")) return [80, 160, 255, 140]; // gracz — niebieski
+    return [0, 255, 0, 120]; // reszta (moby) — zielony, jak było
   }
 }

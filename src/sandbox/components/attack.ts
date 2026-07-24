@@ -11,17 +11,17 @@ interface AttackProps {
 export default class Attack extends DogmaComponent {
   public baseDamage: AttackProps["baseDamage"];
   public damageType: AttackProps["damageType"];
-  public hitType: HitTracking["hitType"];
-  public hitList: Set<Symbol> | Map<Symbol, number>;
+  public tracking: HitTracking;
   // public impactType: AttackProps["impactType"];
   // public attackRange: AttackProps["range"];
   constructor(internalProps: InternalDCProps, props: AttackProps) {
     super(internalProps);
     this.baseDamage = props.baseDamage;
     this.damageType = props.damageType;
-    this.hitType = props.hitType;
-    if (props.hitType === "aura") this.hitList = new Map();
-    else this.hitList = new Set();
+    this.tracking =
+      props.hitType === "aura"
+        ? { hitType: "aura", hitList: new Map() }
+        : { hitType: props.hitType, hitList: new Set() };
     // this.impactType = props.impactType;
     // this.attackRange = props.range;
   }

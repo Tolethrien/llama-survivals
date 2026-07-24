@@ -1,8 +1,8 @@
 import DogmaSystem, { InternalDSProps } from "@/core/dogma/system";
 import { EnemyPerceptionData } from "./AIPerception";
-import { assert } from "@/utils/utils";
-import Vec2D from "@/utils/vec2D";
-import SpatialHash from "@/utils/spatialHash";
+import { assert, createColliderBox, getColliderCenter } from "@/utils/utils";
+import SpatialGrid from "@/core/axiom/SpatialGrid";
+import Vec2 from "@/core/axiom/vec2";
 
 export default class AISwarm extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
@@ -24,47 +24,47 @@ export default class AISwarm extends DogmaSystem {
     );
 
     const swarm = perceptionData.swarm;
-    const { spacialHash } = this.getSharedData<{ spacialHash: SpatialHash }>(
-      "scene",
-      "spacialHash",
-    )!;
+    const { spatialGrid } = this.getSharedData<{
+      spatialGrid: SpatialGrid<Symbol>;
+    }>("scene", "spatialGrid")!;
     const playerTransform = this.getComponentWithMarker("Player", "Transform")!;
+    const playerCollider = this.getComponentWithMarker("Player", "Collider")!;
 
     swarm.forEach((ID) => {
       const transform = this.getComponent(ID, "Transform")!;
       const rigid = this.getComponent(ID, "Rigid")!;
       const enemy = this.getComponent(ID, "EnemyAI")!;
+      const collider = this.getComponent(ID, "Collider")!;
 
-      let desiredX = 0;
-      let desiredY = 0;
-      let separation = Vec2D.create([0, 0]);
+      const desired = Vec2.Zero;
+      const separation = Vec2.Zero;
       let stopDistance =
         (enemy.attackRangeType === "projectile"
           ? enemy.flankRange
           : enemy.attackRange) * 0.8;
 
-      const distToPlayer = new Vec2D([
-        playerTransform.position.x - transform.position.x,
-        playerTransform.position.y - transform.position.y,
-      ]);
+      const selfCenter = getColliderCenter(transform, collider);
+      const playerCenter = getColliderCenter(playerTransform, playerCollider);
+      const distToPlayer = playerCenter.sub(selfCenter);
+
       const distToPlayerSq = distToPlayer.lengthSquared();
       const stopDistanceSq = stopDistance * stopDistance;
 
       if (distToPlayerSq > stopDistanceSq && distToPlayerSq > 1) {
-        const dir = distToPlayer.normalize();
-        desiredX = dir.x * rigid.speed;
-        desiredY = dir.y * rigid.speed;
+        distToPlayer.normalize();
+        desired.copy(distToPlayer).scale(rigid.speed);
       }
-
-      const candidates = spacialHash.getCollisionsBroad(transform);
+      const colliderBox = createColliderBox(transform, collider);
+      const candidates = spatialGrid.query(colliderBox);
       for (const otherID of candidates) {
         const otherTransform = this.getComponent(otherID, "Transform");
         const otherEnemy = this.getComponent(otherID, "EnemyAI");
-        if (!otherTransform || !otherEnemy) continue;
-        const diff = new Vec2D([
-          transform.position.x - otherTransform.position.x,
-          transform.position.y - otherTransform.position.y,
-        ]);
+        const otherCollider = this.getComponent(otherID, "Collider");
+        if (!otherTransform || !otherEnemy || !otherCollider) continue;
+
+        const otherCenter = getColliderCenter(otherTransform, otherCollider);
+        const diff = selfCenter.clone().sub(otherCenter); // .clone()! selfCenter używany w każdej iteracji
+
         const distSq = diff.lengthSquared();
 
         const radiusSelf = transform.size.width / 2;
@@ -80,33 +80,27 @@ export default class AISwarm extends DogmaSystem {
           const overlapRatio = (minDistance - distance) / minDistance;
 
           const finalForce = overlapRatio * rigid.speed * enemy.pushForce;
-          const push = diff.normalize().multiply(finalForce);
-          separation = separation.add(push);
+          const push = diff.normalize().scale(finalForce);
+          separation.add(push);
         }
       }
-      let finalVelocityX = desiredX + separation.x;
-      let finalVelocityY = desiredY + separation.y;
+      const finalVel = desired.clone().add(separation);
 
-      const totalSpeedSq =
-        finalVelocityX * finalVelocityX + finalVelocityY * finalVelocityY;
+      const totalSpeedSq = finalVel.lengthSquared();
       const maxAllowedSpeed = rigid.speed * 1.3;
       const maxAllowedSpeedSq = maxAllowedSpeed * maxAllowedSpeed;
 
       if (totalSpeedSq > maxAllowedSpeedSq) {
         const totalSpeed = Math.sqrt(totalSpeedSq);
-        finalVelocityX = (finalVelocityX / totalSpeed) * maxAllowedSpeed;
-        finalVelocityY = (finalVelocityY / totalSpeed) * maxAllowedSpeed;
+        finalVel.divideScalar(totalSpeed).scale(maxAllowedSpeed);
       }
 
       const lerpFactor = 0.2;
-      const desiredSpeedSq = desiredX * desiredX + desiredY * desiredY;
-
+      const desiredSpeedSq = desired.lengthSquared();
       if (desiredSpeedSq === 0 && totalSpeedSq < 0.1) {
-        rigid.velocity.x += (0 - rigid.velocity.x) * lerpFactor;
-        rigid.velocity.y += (0 - rigid.velocity.y) * lerpFactor;
+        rigid.velocity.lerp(Vec2.Zero, lerpFactor);
       } else {
-        rigid.velocity.x += (finalVelocityX - rigid.velocity.x) * lerpFactor;
-        rigid.velocity.y += (finalVelocityY - rigid.velocity.y) * lerpFactor;
+        rigid.velocity.lerp(finalVel, lerpFactor);
       }
     });
   }

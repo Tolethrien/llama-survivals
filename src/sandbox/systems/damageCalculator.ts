@@ -29,9 +29,10 @@ export default class DamageCalculator extends DogmaSystem {
         this.deleteAttack(attack.ID);
         return;
       }
+
       const finalDamage = this.calculateDamage(hit, attackerStats, targetStats);
       targetStats.currentHP -= finalDamage;
-      this.deleteAttack(attack.ID);
+      if (attack.tracking.hitType !== "pierce") this.deleteAttack(attack.ID);
       if (targetStats.currentHP <= targetStats.minHP)
         toRemove.add(hit.targetID);
     });
@@ -66,12 +67,14 @@ export default class DamageCalculator extends DogmaSystem {
     attacker: SystemComponent<"CharacterStats">,
     target: SystemComponent<"CharacterStats">,
   ) {
+    const attack = this.getComponent(hit.attackID, "Attack")!;
+    const ability = this.getComponent(hit.abilityID, "Ability")!;
     const increase =
-      attacker.damageIncrease + attacker.DamageTypeIncrease[hit.damageType];
+      attacker.damageIncrease + attacker.DamageTypeIncrease[attack.damageType];
     const resist = Math.min(
-      target.resist[hit.damageType],
-      target.maxResist[hit.damageType],
+      target.resist[attack.damageType],
+      target.maxResist[attack.damageType],
     );
-    return Math.max(0, hit.amount * (1 + increase) * (1 - resist));
+    return Math.max(0, attack.baseDamage * (1 + increase) * (1 - resist));
   }
 }

@@ -15,11 +15,11 @@ export default class Skulls extends DogmaEntity {
       },
       attackMeta: {
         baseDmg: 15,
-        lifespan: 0,
+        lifespan: 3.5,
         name: "skull",
-        hitType: "hit",
+        hitType: "pierce",
       },
-      spawnMode: { type: "persistent", delay: 0, where: "onSelf" },
+      spawnMode: { type: "spawn", delay: 0.5, where: "onSelf" },
       directionStrategy: "none",
     });
     this.addComponent("Relation", { parentChar: parentID });

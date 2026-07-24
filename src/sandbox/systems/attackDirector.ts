@@ -53,12 +53,16 @@ export default class AttackDirector extends DogmaSystem {
       relation.parentChar!,
       "Transform",
     )!;
+    const casterCollider = this.getComponent(relation.parentChar!, "Collider")!;
     const playerTransform = this.getComponentWithMarker("Player", "Transform")!;
+    const playerCollider = this.getComponentWithMarker("Player", "Collider")!;
     const attack = AttackManager.build(
       ability,
       relation,
       casterTransform,
+      casterCollider,
       playerTransform,
+      playerCollider,
     );
     relation.children.add(attack!.ID);
     EntityManager.spawnEntity(attack!, "battle");

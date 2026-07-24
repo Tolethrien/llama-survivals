@@ -1,8 +1,8 @@
-import Mat4 from "../../utils/mat4";
 import Aurora from "./core";
 import Aurora2DRenderer from "./renderer/renderer";
 import { AuroraConfig } from "./renderer/config";
 import Time from "../engine/time";
+import Mat4 from "../axiom/mat4";
 type CameraZoom = { current: number; max: number; min: number };
 type CameraPosition = { x: number; y: number };
 const cameraData = {
@@ -24,8 +24,7 @@ export default class AuroraCamera {
   public static initialize(config: AuroraConfig["camera"]) {
     const width = Aurora.canvas.width;
     const height = Aurora.canvas.height;
-
-    this.projectionViewMatrix = Mat4.create().ortho(0, width, height, 0, 0, 1);
+    this.projectionViewMatrix = Mat4.ortho(0, width, height, 0, 0, 1);
     this.origin = { x: width / 2, y: height / 2 };
     this.position = { x: width / 2, y: height / 2 };
     this.speed = config.speed;
@@ -81,8 +80,7 @@ export default class AuroraCamera {
     const snappedPosY = Math.round(this.position.y);
     const snappedZoom = this.zoom.current;
 
-    this.projectionViewMatrix = Mat4.create()
-      .ortho(0, width, height, 0, 0, 1)
+    this.projectionViewMatrix = Mat4.ortho(0, width, height, 0, 0, 1)
       .translate([this.origin.x, this.origin.y, 0])
       .scale(this.zoom.current)
       .translate([-this.position.x, -this.position.y, 0]);
@@ -90,7 +88,7 @@ export default class AuroraCamera {
     Aurora.device.queue.writeBuffer(
       buffer,
       0,
-      AuroraCamera.getProjectionViewMatrix.getMatrix,
+      AuroraCamera.getProjectionViewMatrix.elements,
     );
   }
 

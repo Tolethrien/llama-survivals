@@ -2,10 +2,12 @@ import DogmaSystem, {
   InternalDSProps,
   SystemComponent,
 } from "@/core/dogma/system";
+import { DmgType, HitTracking } from "../managers/attackManager";
 import Time from "@/core/engine/time";
 import SpatialGrid from "@/core/axiom/SpatialGrid";
 import { createColliderBox, createColliderShape } from "@/utils/utils";
 import AxiomCollision from "@/core/axiom/collision";
+import Ability from "../components/ability";
 
 export type HitEvent = {
   attackerID: Symbol;
@@ -31,7 +33,7 @@ export default class Collision extends DogmaSystem {
     });
   }
 
-  //TODO: mam 2 osobne funckje koliderow dl spatiaal i do kolizji, bez sensu! zmien
+  //TODO: getColliderRect daje ci w sumie tteraz rect naweet dla circlow
   //TODO: w sumie fraction by moglo byc w relacji bo to ogolny komponent relacji moze byc
   private addPlayerToHash() {
     const { spatialGrid } = this.getSharedData<{
