@@ -45,7 +45,7 @@ export default class Archer extends DogmaEntity {
       personalSpace: 1.2,
     });
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine"],
+      slots: ["ArrowMachine", "WorldDir"],
     });
     this.addComponent("Collider", {
       shape: "rect",
@@ -56,7 +56,7 @@ export default class Archer extends DogmaEntity {
       spriteName: "mobs",
       crop: MobCrops.player,
       renderMode: "lerpPos",
-      layer: RENDER_LAYER.chars,
+      layer: RENDER_LAYER.main,
     });
   }
 }

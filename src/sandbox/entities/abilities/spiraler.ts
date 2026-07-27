@@ -1,32 +1,33 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class ArrowMachine extends DogmaEntity {
+export default class Spiraler extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("ArrowMachine");
+    this.addTag("Spiraler");
 
     this.addComponent("Ability", {
       attackBehavior: {
         name: "projectile",
-        direction: { name: "towardsFacing" },
         movementSpeed: 500,
+        direction: { name: "angle", deg: 0 },
       },
       attackMeta: {
         baseDmg: 15,
         lifeSpan: 2,
-        attackName: "arrow",
-        hitType: "hit",
+        attackName: "purpleArrow",
+        hitType: "pierce",
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
       },
       spawnMode: {
-        type: "spawnAtOnce",
-        abilityDelay: 2,
-        count: 1,
+        type: "spawnOnDelay",
+        abilityDelay: 3,
         where: "onSelf",
-        angleStep: 0,
+        count: 10,
+        angleStep: 360 / 10, // 16 × 22.5° = 360° — pełny obrót
+        delay: 0.3, // odstęp między kolejnymi strzałami w serii (dawne burstInterval)
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

@@ -129,7 +129,7 @@ export default class AuroraCamera {
   public static get getProjectionViewMatrix() {
     return this.projectionViewMatrix;
   }
-  public static getViewBox() {
+  public static getViewBox(): Box {
     const width = Aurora.canvas.width;
     const height = Aurora.canvas.height;
     const zoom = this.zoom.current;

@@ -111,7 +111,8 @@ export default class Render extends DogmaSystem {
   }
   private resolveOrbitRenderPos(ID: Symbol, alpha: number): Position2D | null {
     const orbit = this.getComponent(ID, "Orbit");
-    if (!orbit) return null;
+    const transform = this.getComponent(ID, "Transform");
+    if (!orbit || !transform) return null;
     const targetTransform = this.getComponent(orbit.targetID, "Transform");
     if (!targetTransform) return null;
 
@@ -120,7 +121,12 @@ export default class Render extends DogmaSystem {
       orbit.angleDeg,
       alpha,
     );
-    return getOrbitPosition(orbit, targetTransform, lerpedAngle);
+    return getOrbitPosition(
+      orbit,
+      targetTransform,
+      transform.size,
+      lerpedAngle,
+    );
   }
 
   private lerpPos(

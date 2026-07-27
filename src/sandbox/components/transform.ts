@@ -8,10 +8,12 @@ export default class Transform extends DogmaComponent {
   public position: Vec2;
   public prevPosition: Vec2;
   public size: Size2D;
+  public faceDir: Vec2;
   constructor(internalProps: InternalDCProps, props: TransformProps) {
     super(internalProps);
     this.position = Vec2.create(props.position.x, props.position.y);
     this.prevPosition = Vec2.create(props.position.x, props.position.y);
     this.size = { width: props.size.width, height: props.size.height };
+    this.faceDir = Vec2.create(1, 0);
   }
 }

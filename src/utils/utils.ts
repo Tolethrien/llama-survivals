@@ -110,22 +110,43 @@ export function createColliderShape(
 export function getOrbitPosition(
   orbit: SystemComponent<"Orbit">,
   targetTransform: SystemComponent<"Transform">,
+  selfSize: Size2D,
   angleDeg: number,
 ): Position2D {
   const angleRad = (angleDeg * Math.PI) / 180;
   const centerX = targetTransform.position.x + targetTransform.size.width * 0.5;
-  const centerY =
-    targetTransform.position.y + targetTransform.size.height * 0.5;
+  const centerY = targetTransform.position.y + targetTransform.size.height;
   return {
-    x:
-      centerX +
-      Math.sin(angleRad) * orbit.radius.x -
-      targetTransform.size.width / 2,
-    y:
-      centerY -
-      Math.cos(angleRad) * orbit.radius.y -
-      targetTransform.size.height / 2,
+    x: centerX + Math.sin(angleRad) * orbit.radius.x - selfSize.width / 2,
+    y: centerY - Math.cos(angleRad) * orbit.radius.y - selfSize.height / 2,
   };
+}
+
+export function getStickPosition(
+  angle: number,
+  distance: number,
+  anchor: "feet" | "center",
+  targetTransform: SystemComponent<"Transform">,
+  selfSize: Size2D,
+): Position2D {
+  const targetAnchor = Vec2.create(
+    targetTransform.position.x + targetTransform.size.width * 0.5,
+    anchor === "feet"
+      ? targetTransform.position.y + targetTransform.size.height
+      : targetTransform.position.y + targetTransform.size.height * 0.5,
+  );
+
+  const angleRad = (angle * Math.PI) / 180;
+  const casterReach =
+    anchor === "center"
+      ? targetTransform.size.width * 0.5 + selfSize.width * 0.5
+      : 0;
+  const offset = Vec2.create(Math.sin(angleRad), -Math.cos(angleRad)).scale(
+    casterReach + distance,
+  );
+
+  const selfHalf = Vec2.create(selfSize.width * 0.5, selfSize.height * 0.5);
+  return targetAnchor.add(offset).sub(selfHalf).value;
 }
 export function getColliderCenter(
   { position, size }: { position: Position2D; size: Size2D },

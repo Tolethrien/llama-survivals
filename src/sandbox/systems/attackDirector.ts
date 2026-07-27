@@ -4,6 +4,7 @@ import EntityManager from "@/core/dogma/entityManager";
 import { EnemyPerceptionData } from "./AIPerception";
 import { assert } from "@/utils/utils";
 import Time from "@/core/engine/time";
+import Rigid from "../components/rigid";
 
 export default class AttackDirector extends DogmaSystem {
   declare private playerID: Symbol;
@@ -29,9 +30,15 @@ export default class AttackDirector extends DogmaSystem {
     abilities?.forEach((ID) => {
       const ability = this.getComponent(ID, "Ability")!;
       const relation = this.getComponent(ID, "Relation")!;
+
+      if (ability.burstRemaining > 0) {
+        this.tickBurst(ability, relation, dt);
+        return;
+      }
+
       if (ability.spawnMode.type === "persistent") {
         if (!ability.spawnMode.spawned) {
-          this.generateAbilityAttack(ability, relation);
+          this.startBurst(ability, relation);
           ability.spawnMode.spawned = true;
         }
         return;
@@ -41,13 +48,44 @@ export default class AttackDirector extends DogmaSystem {
         return;
       }
       if (!relation.parentChar || !combatList.has(relation.parentChar)) return;
-      this.generateAbilityAttack(ability, relation);
+      this.startBurst(ability, relation);
       ability.cooldown = ability.abilityDelay;
     });
   }
+
+  private startBurst(
+    ability: SystemComponent<"Ability">,
+    relation: SystemComponent<"Relation">,
+  ) {
+    if (ability.spawnMode.type === "spawnOnDelay") {
+      ability.burstRemaining = ability.spawnMode.count;
+      ability.burstIndex = 0;
+      ability.burstTimer = 0;
+      return;
+    }
+    for (let i = 0; i < ability.spawnMode.count; i++) {
+      this.generateAbilityAttack(ability, relation, i);
+    }
+  }
+
+  private tickBurst(
+    ability: SystemComponent<"Ability">,
+    relation: SystemComponent<"Relation">,
+    dt: number,
+  ) {
+    if (ability.spawnMode.type !== "spawnOnDelay") return;
+    ability.burstTimer -= dt;
+    if (ability.burstTimer > 0) return;
+    this.generateAbilityAttack(ability, relation, ability.burstIndex);
+    ability.burstIndex += 1;
+    ability.burstRemaining -= 1;
+    ability.burstTimer = ability.spawnMode.delay;
+  }
+
   private generateAbilityAttack(
     ability: SystemComponent<"Ability">,
     relation: SystemComponent<"Relation">,
+    spreadIndex: number,
   ) {
     const casterTransform = this.getComponent(
       relation.parentChar!,
@@ -63,7 +101,13 @@ export default class AttackDirector extends DogmaSystem {
       casterCollider,
       playerTransform,
       playerCollider,
+      spreadIndex,
     );
+    const rigid = attack.getComponent("Rigid") as Rigid | undefined;
+    if (rigid) {
+      const casterRigid = this.getComponent(relation.parentChar!, "Rigid");
+      if (casterRigid) rigid.velocity.add(casterRigid.velocity);
+    }
     relation.children.add(attack!.ID);
     EntityManager.spawnEntity(attack!, "battle");
   }

@@ -12,7 +12,7 @@ export default class Ork extends DogmaEntity {
       size: { height: 64, width: 32 },
     });
     this.addTag("enemy");
-    this.addComponent("Rigid", { speed: 150 });
+    this.addComponent("Rigid", { speed: 350 });
     this.addComponent("Fraction", { team: "enemy" });
     this.addComponent("CharacterStats", {
       maxHP: 100,
@@ -40,27 +40,20 @@ export default class Ork extends DogmaEntity {
     this.addComponent("EnemyAI", {
       pushForce: 0.5,
       personalSpace: 1.2,
-      attackRange: 50,
+      attackRange: 80,
       flankRange: 0,
       attackRangeType: "melee",
     });
     this.addComponent("Equipment", {
-      slots: [],
+      slots: ["Slash"],
     });
     this.addComponent("Collider", { shape: "rect" });
 
-    // this.addComponent("Attack", {
-    //   attackDelay: 3,
-    //   baseDamage: 1,
-    //   damageType: "physical",
-    //   impactType: "impact",
-    //   attackRange: "close",
-    // });
     this.addComponent("Sprite", {
       spriteName: "mobs",
       crop: MobCrops.ork,
       renderMode: "lerpPos",
-      layer: RENDER_LAYER.chars,
+      layer: RENDER_LAYER.main,
     });
   }
 }

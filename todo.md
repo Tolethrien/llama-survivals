@@ -1,2 +1,0 @@
-- wpierw przygotuj wszystko z oknem jak resize itp
-- scheculer wraz z ECS

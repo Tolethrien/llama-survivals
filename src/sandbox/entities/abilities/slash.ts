@@ -1,32 +1,32 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class ArrowMachine extends DogmaEntity {
+export default class Slash extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("ArrowMachine");
-
+    this.addTag("Slash");
     this.addComponent("Ability", {
       attackBehavior: {
-        name: "projectile",
+        name: "stick",
+        angle: 0,
+        distance: 0,
         direction: { name: "towardsFacing" },
-        movementSpeed: 500,
       },
       attackMeta: {
-        baseDmg: 15,
-        lifeSpan: 2,
-        attackName: "arrow",
-        hitType: "hit",
-        attackRange: "projectile",
+        baseDmg: 12,
+        lifeSpan: 1,
+        attackName: "skull",
+        hitType: "pierce",
+        attackRange: "melee",
         damageType: "physical",
         impactType: "impact",
       },
       spawnMode: {
         type: "spawnAtOnce",
-        abilityDelay: 2,
+        where: "inFront",
         count: 1,
-        where: "onSelf",
         angleStep: 0,
+        abilityDelay: 3,
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

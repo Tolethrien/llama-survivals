@@ -38,7 +38,9 @@ export default class Player extends DogmaEntity {
       swingSpeedInc: 0,
     });
 
-    this.addComponent("Equipment", { slots: ["Skulls"] });
+    this.addComponent("Equipment", {
+      slots: ["ArrowMachine", "Aura", "Skulls", "WorldDir", "Spiraler"],
+    });
     this.addComponent("Rigid", { speed: 300 });
     this.addComponent("Collider", {
       shape: "rect",
@@ -50,7 +52,7 @@ export default class Player extends DogmaEntity {
       crop: MobCrops.ork,
       tint: [200, 100, 80, 255],
       renderMode: "lerpPos",
-      layer: RENDER_LAYER.chars,
+      layer: RENDER_LAYER.main,
     });
   }
 }

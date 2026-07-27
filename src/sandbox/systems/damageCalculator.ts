@@ -68,7 +68,6 @@ export default class DamageCalculator extends DogmaSystem {
     target: SystemComponent<"CharacterStats">,
   ) {
     const attack = this.getComponent(hit.attackID, "Attack")!;
-    const ability = this.getComponent(hit.abilityID, "Ability")!;
     const increase =
       attacker.damageIncrease + attacker.DamageTypeIncrease[attack.damageType];
     const resist = Math.min(

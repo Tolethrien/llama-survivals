@@ -20,17 +20,25 @@ import DamageCalculator from "./systems/damageCalculator";
 import AttackDirector from "./systems/attackDirector";
 import Ability from "./components/ability";
 import Attack from "./components/attack";
-import FireMachineGun from "./entities/abilities/fireMachine";
+import Aura from "./entities/abilities/aura";
 import ArrowMachine from "./entities/abilities/arrowMachine";
 import Stick from "./components/stick";
 import Orbit from "./components/orbit";
 import Fraction from "./components/fraction";
 import Skulls from "./entities/abilities/skulls";
+import WorldDir from "./entities/abilities/worldDir";
+import Spawner from "./systems/spawner";
+import Slash from "./entities/abilities/slash";
+import Projectile from "./components/projectile";
+import Spiraler from "./entities/abilities/spiraler";
 
 export const abilities = {
-  FireMachineGun,
+  Aura,
   ArrowMachine,
   Skulls,
+  WorldDir,
+  Slash,
+  Spiraler,
 };
 
 export const dogmaConfig = {
@@ -44,6 +52,7 @@ export const dogmaConfig = {
     LifeCycle,
     DamageCalculator,
     AttackDirector,
+    Spawner,
   },
   components: {
     Rigid,
@@ -62,5 +71,6 @@ export const dogmaConfig = {
     Stick,
     Orbit,
     Fraction,
+    Projectile,
   },
 } satisfies DogmaConfig;

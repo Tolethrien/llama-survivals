@@ -1,0 +1,6 @@
+- Wszystko co cie interesuje znajduje sie w folderze Sandbox - wszystko poza nim to silnikowe rzeczy
+- Gdzie co znajdziesz:
+  - folder entity trzyma wszystkie encje czyli zywe obiekty, jak gracz,wszystkie moby, ataki,umiejki itp
+  - w pliku player albo jakikolwiek inny mob masz komponent (character stats) tam sa wszystkie twoje bazowe startowe statystyki ktore mozesz mu ustawic
+    - w fodlerze attacks jest index.ts i w nim sa meta dane do ataczkow, jak maja wyglad, jak maja byc rysowane, tam mozesz tez dodawac nowe
+    - w folderze abilities masz umiejki, czyli te opisy jak ma cos atakowac ze ma strzelac 4 kule ognia w 4 kierunki i one maja robic tyle i tyle dps

@@ -1,4 +1,4 @@
-import { get8DirFromPosDiff } from "@/utils/utils";
+import Vec2 from "../axiom/vec2";
 
 interface MouseEvents {
   mousePos: Position2D;
@@ -32,6 +32,7 @@ export default class InputManager {
   private static keyPreviousFrame = new Set<string>();
   private static keyCurrentFrame = new Set<string>();
   private static keyInputBuffer = new Set<string>();
+  private static mouseDir: Vec2 = Vec2.Zero;
   private static actionMap: Map<string, Action> = new Map();
   public static registerEvents(canvas: HTMLCanvasElement) {
     canvas.addEventListener("mousedown", (e) => this.mouseEvents(e, "down"));
@@ -57,6 +58,14 @@ export default class InputManager {
       wheel: this.mouseInputBuffer.wheel,
     };
     this.mouseInputBuffer.wheel = 0;
+    const centerX = this.canvas.width * 0.5;
+    const centerY = this.canvas.height * 0.5;
+    this.mouseDir
+      .set(
+        this.mouseCurrentFrame.mousePos.x - centerX,
+        this.mouseCurrentFrame.mousePos.y - centerY,
+      )
+      .normalize();
   }
 
   public static isMouseClicked(button: keyof typeof MouseKey) {
@@ -103,15 +112,7 @@ export default class InputManager {
     return !this.keyCurrentFrame.has(char) && this.keyPreviousFrame.has(char);
   }
   public static getMouseDirFromCenter() {
-    const center: Position2D = {
-      x: this.canvas.width * 0.5,
-      y: this.canvas.height * 0.5,
-    };
-    const dir: Position2D = {
-      x: this.mouseCurrentFrame.mousePos.x - center.x,
-      y: this.mouseCurrentFrame.mousePos.y - center.y,
-    };
-    return get8DirFromPosDiff(dir);
+    return this.mouseDir.value;
   }
   //ACTIONS
   public static bindAction(action: Action) {

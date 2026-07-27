@@ -1,88 +1,60 @@
 import { SystemComponent } from "@/core/dogma/system";
-import InputManager from "@/core/engine/inputManager";
+import { AttackDisplayKey, AttackShapeList } from "../entities/attacks";
 import BaseAttack from "../entities/baseAttack";
+import { getColliderCenter, getStickPosition } from "@/utils/utils";
 import AuroraCamera from "@/core/aurora/camera";
-import { RENDER_LAYER } from "../scenes/battleScene";
 import AxiomMath from "@/core/axiom/math";
-import Vec2 from "@/core/axiom/vec2";
-import { getColliderCenter } from "@/utils/utils";
 
-export type DamageImpactType = "impact" | "overTime";
-export type AttackRange = "melee" | "projectile";
-export type ImpactBehavior = "destroy" | "live";
-export type DmgType =
-  | "physical"
-  | "fire"
-  | "cold"
-  | "energy"
-  | "poison"
-  | "heal";
-export type HitTrackingKeys = "hit" | "pierce" | "aura";
+export type AttackBehavior =
+  | { name: "static" }
+  | { name: "projectile"; movementSpeed: number; direction: DirectionStrategy }
+  | {
+      name: "orbit";
+      orbitSpeed: number;
+      radius: Position2D;
+      startAngle?: number;
+    }
+  | {
+      name: "stick";
+      distance: number;
+      angle: number;
+      direction: DirectionStrategy;
+    };
+
+type SpawnCommon = {
+  abilityDelay: number;
+  spawned: boolean;
+  where: "randomPoint" | "onTarget" | "onSelf" | "inFront";
+  count: number;
+  angleStep: number;
+};
+export type SpawnMode =
+  | (SpawnCommon & { type: "spawnAtOnce" })
+  | (SpawnCommon & { type: "spawnOnDelay"; delay: number })
+  | (SpawnCommon & { type: "persistent" });
+
+export type DirectionStrategy =
+  | { name: "none" }
+  | { name: "angle"; deg: number }
+  | { name: "random" }
+  | { name: "towardsFacing" };
+
+export type AttackMeta = {
+  attackName: AttackDisplayKey;
+  damageType: "physical" | "fire" | "cold" | "energy" | "poison" | "heal";
+  impactType: "impact" | "overTime";
+  lifeSpan: number;
+  baseDmg: number;
+  hitType: "hit" | "pierce" | "aura";
+  attackRange: "melee" | "projectile";
+};
+
 export type HitTracking =
   | { hitType: "hit"; hitList: Set<Symbol> }
   | { hitType: "pierce"; hitList: Set<Symbol> }
   | { hitType: "aura"; hitList: Map<Symbol, number> };
-export interface TargetingContext {
-  casterTransform: SystemComponent<"Transform">;
-  targetTransform: SystemComponent<"Transform">;
-}
-export type TargetingResult = { position: Position2D; velocity?: Position2D };
-interface ATTEntry {
-  tint?: RGBA;
-  texture: string;
-  crop: Crop;
-  shape: "circle" | "rect";
-  layer: keyof typeof RENDER_LAYER;
-  size: Size2D;
-  colliderOffsets?: {
-    pos?: Position2D;
-    size?: Size2D;
-  };
-}
-//TODO: jedno zrodlo prawdy dla wszyzstkich typow bo teraz mam tutaj i w ability
-export type AttackDisplayKey = keyof typeof ATT;
-//TODO: bez sensu to, roznie dobrze moge sobie gdzies opisac pozniej ataki i uzywac tamtego, narazie zostanie do czasu az wymysle lepiej
-export const ATT: Record<string, ATTEntry> = {
-  fireball: {
-    tint: [255, 255, 255, 255],
-    crop: { x: 94, y: 0, width: 94, height: 94 },
-    texture: "auras",
-    shape: "circle",
-    layer: "groundAttacks",
-    size: { width: 300, height: 300 },
-  },
-  skull: {
-    tint: [0, 0, 255, 255],
-    crop: { x: 94, y: 0, width: 94, height: 94 },
-    texture: "auras",
-    shape: "circle",
-    layer: "charAttacks",
-    size: { width: 40, height: 40 },
-  },
-  arrow: {
-    tint: [255, 255, 255, 255],
-    crop: { x: 0, y: 0, width: 32, height: 32 },
-    texture: "spells",
-    shape: "circle",
-    layer: "charAttacks",
-    size: { width: 64, height: 64 },
-    colliderOffsets: {
-      size: { width: -10, height: -10 },
-      pos: { x: 0, y: -5 },
-    },
-  },
-};
-/**
- * nie dzialajace polaczenia do assertu:
- * spawnStatic oraz jakikolwiek direction
- */
-/**
- * pomysly na dodanie:
- * random off screen + toward center
- */
+
 export default class AttackManager {
-  //TODO: to jest swietne miejsce do object pooling bo to sie bedzie tworzylo w dziesiatkach co frame
-  //TODO: nie dziala radom point i towards target ob uzywa pozycji castera do obliczen a nie randomPointu
   public static build(
     ability: SystemComponent<"Ability">,
     relation: SystemComponent<"Relation">,
@@ -90,47 +62,114 @@ export default class AttackManager {
     casterCollider: SystemComponent<"Collider">,
     targetTransform: SystemComponent<"Transform">,
     targetCollider: SystemComponent<"Collider">,
+    spreadIndex: number,
   ) {
-    const displayData = ATT[ability.attackMeta.name];
-    const pos = this.getSpawnPoint(
-      ability,
+    const displayData = AttackShapeList[ability.attackMeta.attackName];
+    const angleOffsetDeg = this.getAngleOffset(ability.spawnMode, spreadIndex);
+
+    const { behavior: attackBehavior, velocity } = this.resolveBehavior(
+      ability.attackBehavior,
       casterTransform,
-      casterCollider,
-      targetTransform,
-      targetCollider,
-      displayData.size,
+      angleOffsetDeg,
     );
-    const dir = this.getDirection(
-      ability,
-      casterTransform,
-      casterCollider,
-      targetTransform,
-      targetCollider,
-    );
+
+    const pos =
+      attackBehavior.name === "stick"
+        ? getStickPosition(
+            attackBehavior.angle,
+            attackBehavior.distance,
+            displayData.layer === "groundAttacks" ? "feet" : "center",
+            casterTransform,
+            displayData.size,
+          )
+        : this.getSpawnPoint(
+            ability,
+            casterTransform,
+            casterCollider,
+            targetTransform,
+            targetCollider,
+            displayData.size,
+          );
     const builder = new BaseAttack({
       abilityID: ability.ID,
       casterID: relation.parentChar!,
-      attackMeta: {
-        baseDmg: ability.attackMeta.baseDmg,
-        damageType: "physical",
-        impactType: "impact",
-        lifeSpan: ability.attackMeta.lifespan,
-        onImpact: "destroy",
-        hitType: ability.attackMeta.hitType,
-      },
-      attackName: ability.attackMeta.name,
-      attackRange: "projectile",
-      behavior: {
-        attackBehavior: ability.attackBehavior,
-        directionStrategy: ability.directionStrategy,
-      },
+      attackMeta: ability.attackMeta,
+      attackBehavior,
       spawn: ability.spawnMode,
-      transform: {
-        position: pos,
-        velocity: dir,
-      },
+      transform: { position: pos, velocity },
     });
     return builder;
+  }
+
+  private static getAngleOffset(spawnMode: SpawnMode, spreadIndex: number) {
+    const { count, angleStep } = spawnMode;
+    if (count <= 1) return 0;
+    return (spreadIndex - (count - 1) / 2) * angleStep;
+  }
+
+  private static resolveDirectionAngleDeg(
+    direction: DirectionStrategy,
+    casterTransform: SystemComponent<"Transform">,
+  ): number | null {
+    switch (direction.name) {
+      case "none":
+        return null;
+      case "angle":
+        return direction.deg;
+      case "random":
+        return Math.random() * 360;
+      case "towardsFacing": {
+        const face = casterTransform.faceDir;
+        return (Math.atan2(face.x, -face.y) * 180) / Math.PI;
+      }
+    }
+  }
+
+  private static resolveBehavior(
+    behavior: AttackBehavior,
+    casterTransform: SystemComponent<"Transform">,
+    angleOffsetDeg: number,
+  ): { behavior: AttackBehavior; velocity: Position2D } {
+    switch (behavior.name) {
+      case "orbit": {
+        const nextBehavior =
+          angleOffsetDeg === 0
+            ? behavior
+            : {
+                ...behavior,
+                startAngle: (behavior.startAngle ?? 0) + angleOffsetDeg,
+              };
+        return { behavior: nextBehavior, velocity: { x: 0, y: 0 } };
+      }
+      case "stick": {
+        const baseDeg =
+          this.resolveDirectionAngleDeg(behavior.direction, casterTransform) ??
+          0;
+        return {
+          behavior: {
+            ...behavior,
+            angle: behavior.angle + baseDeg + angleOffsetDeg,
+          },
+          velocity: { x: 0, y: 0 },
+        };
+      }
+      case "projectile": {
+        const baseDeg =
+          this.resolveDirectionAngleDeg(behavior.direction, casterTransform) ??
+          0;
+        return {
+          behavior,
+          velocity: this.unitVectorFromAngleDeg(baseDeg + angleOffsetDeg),
+        };
+      }
+      case "static":
+        return { behavior, velocity: { x: 0, y: 0 } };
+    }
+  }
+
+  private static unitVectorFromAngleDeg(angleDeg: number): Position2D {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: Math.sin(rad), y: -Math.cos(rad) };
   }
 
   private static getSpawnPoint(
@@ -149,6 +188,15 @@ export default class AttackManager {
           y: casterCenter.y - attackSize.height / 2,
         };
       }
+      case "inFront": {
+        const casterCenter = getColliderCenter(casterTransform, casterCollider);
+        const face = casterTransform.faceDir;
+        const offsetDist = casterTransform.size.width * 0.5;
+        return {
+          x: casterCenter.x + face.x * offsetDist - attackSize.width / 2,
+          y: casterCenter.y + face.y * offsetDist - attackSize.height / 2,
+        };
+      }
       case "onTarget": {
         const targetCenter = getColliderCenter(targetTransform, targetCollider);
         return {
@@ -160,35 +208,8 @@ export default class AttackManager {
         const viewBox = AuroraCamera.getViewBox();
         return AxiomMath.randomInRectPoint(viewBox);
       }
-    }
-  }
-
-  private static getDirection(
-    ability: SystemComponent<"Ability">,
-    casterTransform: SystemComponent<"Transform">,
-    casterCollider: SystemComponent<"Collider">,
-    targetTransform: SystemComponent<"Transform">,
-    targetCollider: SystemComponent<"Collider">,
-  ): Position2D {
-    switch (ability.directionStrategy) {
-      case "none": {
+      default: {
         return { x: 0, y: 0 };
-      }
-      case "randomDirection": {
-        const angle = Math.random() * Math.PI * 2;
-        return { x: Math.cos(angle), y: Math.sin(angle) };
-      }
-      case "towardsMouse": {
-        const dir = InputManager.getMouseDirFromCenter();
-        const length = Vec2.create(dir.x, dir.y).length();
-        return { x: dir.x / length, y: dir.y / length };
-      }
-      case "towardsTarget": {
-        const casterCenter = getColliderCenter(casterTransform, casterCollider);
-        const targetCenter = getColliderCenter(targetTransform, targetCollider);
-        const posDiff = targetCenter.sub(casterCenter);
-        const length = posDiff.length();
-        return { x: posDiff.x / length, y: posDiff.y / length };
       }
     }
   }

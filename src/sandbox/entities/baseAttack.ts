@@ -1,52 +1,32 @@
-import MobCrops from "../assets/monsters.json";
-
 import DogmaEntity from "@/core/dogma/entity";
-import {
-  ATT,
-  AttackDisplayKey,
-  AttackRange,
-  DamageImpactType,
-  DmgType,
-  HitTrackingKeys,
-  ImpactBehavior,
-} from "../managers/attackManager";
+
+import { RENDER_LAYER } from "../scenes/battleScene";
+import { AttackEntry, AttackShapeList } from "./attacks";
 import {
   AttackBehavior,
-  DirectionStrategy,
+  AttackMeta,
   SpawnMode,
-} from "../components/ability";
-import { RENDER_LAYER } from "../scenes/battleScene";
+} from "../managers/attackManager";
+
 interface AttackProps {
-  attackName: AttackDisplayKey;
   abilityID: Symbol;
   casterID: Symbol;
-  attackRange: AttackRange;
-  attackMeta: {
-    damageType: DmgType;
-    impactType: DamageImpactType;
-    onImpact: ImpactBehavior;
-    lifeSpan: number;
-    baseDmg: number;
-    hitType: HitTrackingKeys;
-  };
+  attackMeta: AttackMeta;
   spawn: Omit<SpawnMode, "spawned">;
   transform: {
     position: Position2D;
     velocity: Position2D;
-    //tutaj wyglad
   };
-  behavior: {
-    attackBehavior: AttackBehavior;
-    directionStrategy: DirectionStrategy;
-  };
+  attackBehavior: AttackBehavior;
 }
+
 export default class BaseAttack extends DogmaEntity {
   constructor(props: AttackProps) {
     super();
-    //base
     this.addTag("attack");
-    this.addTag(props.attackName);
-    const displayData = ATT[props.attackName];
+    this.addTag(props.attackMeta.attackName);
+    const displayData: AttackEntry =
+      AttackShapeList[props.attackMeta.attackName];
     this.addComponent("Transform", {
       position: props.transform.position,
       size: displayData.size,
@@ -64,21 +44,18 @@ export default class BaseAttack extends DogmaEntity {
       spriteName: displayData.texture,
       crop: displayData.crop,
       renderMode:
-        props.behavior.attackBehavior.name === "orbit"
-          ? "lerpAngle"
-          : "lerpPos",
+        props.attackBehavior.name === "orbit" ? "lerpAngle" : "lerpPos",
       layer: RENDER_LAYER[displayData.layer],
       tint: displayData.tint,
     });
     this.addComponent("Collider", {
-      shape: displayData.shape,
-      sizeOffset: displayData.colliderOffsets?.size,
-      posOffset: displayData.colliderOffsets?.pos,
+      shape: displayData.collider.shape,
+      sizeOffset: displayData.collider.sizeOffset,
+      posOffset: displayData.collider.posOffset,
     });
-    //dependent
-    const attackBehavior = props.behavior.attackBehavior;
+    const attackBehavior = props.attackBehavior;
     switch (attackBehavior.name) {
-      case "rigid": {
+      case "projectile": {
         const velocity = props.transform.velocity;
         this.addComponent("Rigid", {
           speed: attackBehavior.movementSpeed,
@@ -95,6 +72,7 @@ export default class BaseAttack extends DogmaEntity {
           distance: attackBehavior.distance,
           targetID: props.casterID,
           angle: attackBehavior.angle,
+          anchor: displayData.layer === "groundAttacks" ? "feet" : "center",
         });
         break;
       }
@@ -107,9 +85,8 @@ export default class BaseAttack extends DogmaEntity {
         });
         break;
       }
-      default: {
+      default:
         break;
-      }
     }
     const lifespan = props.attackMeta.lifeSpan;
     if (lifespan > 0) this.addComponent("LifeSpan", { span: lifespan });

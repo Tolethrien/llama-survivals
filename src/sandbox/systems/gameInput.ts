@@ -10,6 +10,7 @@ import { assert } from "@/utils/utils";
 export default class GameInputs extends DogmaSystem {
   private axis = Vec2.Zero;
   declare private playerRigid: SystemComponent<"Rigid">;
+  declare private playerTransform: SystemComponent<"Transform">;
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
   }
@@ -21,12 +22,17 @@ export default class GameInputs extends DogmaSystem {
     });
 
     const rigid = this.getComponentWithMarker("Player", "Rigid");
-    console.log(Dogma.getScene("battle"));
+    const transform = this.getComponentWithMarker("Player", "Transform");
     assert(
       rigid !== undefined,
       "There is no player rigid in game, should be impossible",
     );
+    assert(
+      transform !== undefined,
+      "There is no player transform in game, should be impossible",
+    );
     this.playerRigid = rigid;
+    this.playerTransform = transform;
   }
   public playerMovementInputs() {
     this.axis.set(0, 0);
@@ -41,5 +47,8 @@ export default class GameInputs extends DogmaSystem {
     } else {
       this.playerRigid.velocity.set(0, 0);
     }
+    const mouseDir = InputManager.getMouseDirFromCenter();
+    if (mouseDir.x !== 0 && mouseDir.y !== 0)
+      this.playerTransform.faceDir.set(mouseDir.x, mouseDir.y);
   }
 }

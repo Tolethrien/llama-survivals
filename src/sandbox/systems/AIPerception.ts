@@ -2,7 +2,7 @@ import DogmaSystem, {
   InternalDSProps,
   SystemComponent,
 } from "@/core/dogma/system";
-import { assert, createColliderBox } from "@/utils/utils";
+import { assert, createColliderBox, getColliderCenter } from "@/utils/utils";
 import { EnemyState } from "../components/enemyAI";
 import SpatialGrid from "@/core/axiom/spatialGridFrame";
 import AxiomMath from "@/core/axiom/math";
@@ -44,9 +44,14 @@ export default class AIPerception extends DogmaSystem {
   }
   private perception() {
     const playerTransform = this.getComponentWithMarker("Player", "Transform");
+    const playerCollider = this.getComponentWithMarker("Player", "Collider");
     assert(
       playerTransform !== undefined,
       "AI Perception: There is no player transform to fallow",
+    );
+    assert(
+      playerCollider !== undefined,
+      "AI Perception: There is no player collider to fallow",
     );
 
     const enemyIDs = this.getComponentsGroup(["Transform", "Rigid", "EnemyAI"]);
@@ -56,10 +61,12 @@ export default class AIPerception extends DogmaSystem {
       const collider = this.getComponent(ID, "Collider")!;
 
       this.generateHashGridData(ID, transform, collider);
-
+      this.updateFaceDir(transform, collider, playerTransform, playerCollider);
       const enemyState = this.calculateEnemyState(
         transform,
+        collider,
         playerTransform,
+        playerCollider,
         enemy,
       );
       enemy.state = enemyState;
@@ -82,16 +89,31 @@ export default class AIPerception extends DogmaSystem {
       data: ID,
     });
   }
+  private updateFaceDir(
+    transform: SystemComponent<"Transform">,
+    collider: SystemComponent<"Collider">,
+    playerTransform: SystemComponent<"Transform">,
+    playerCollider: SystemComponent<"Collider">,
+  ) {
+    const selfCenter = getColliderCenter(transform, collider);
+    const playerCenter = getColliderCenter(playerTransform, playerCollider);
+    const diff = playerCenter.sub(selfCenter);
+    if (diff.lengthSquared() > 1) {
+      transform.faceDir.copy(diff.normalize());
+    }
+  }
 
   private calculateEnemyState(
     transform: SystemComponent<"Transform">,
+    collider: SystemComponent<"Collider">,
     playerTransform: SystemComponent<"Transform">,
+    playerCollider: SystemComponent<"Collider">,
     enemy: SystemComponent<"EnemyAI">,
   ) {
-    const distSq = AxiomMath.distanceSquared2d(
-      transform.position,
-      playerTransform.position,
-    );
+    const selfCenter = getColliderCenter(transform, collider);
+    const playerCenter = getColliderCenter(playerTransform, playerCollider);
+    const distSq = selfCenter.sub(playerCenter).lengthSquared();
+
     const attackRangeSq = enemy.attackRange * enemy.attackRange;
     const flankRangeSq = enemy.flankRange * enemy.flankRange;
 

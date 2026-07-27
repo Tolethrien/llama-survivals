@@ -34,6 +34,9 @@ export default abstract class DogmaEntity {
   public getComponents() {
     return this.components;
   }
+  public getComponent(key: ComponentRegistryKeys) {
+    return this.components.get(key);
+  }
   public addTag(tag: string) {
     this.tags.add(tag);
   }

@@ -20,3 +20,6 @@ type DeepPartial<T> = {
       : DeepPartial<T[P]>
     : T[P];
 };
+type DistributiveOmit<T, K extends PropertyKey> = T extends any
+  ? Omit<T, K>
+  : never;

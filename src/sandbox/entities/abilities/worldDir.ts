@@ -1,56 +1,53 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class Skulls extends DogmaEntity {
+export default class WorldDir extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("Skulls");
+    this.addTag("WorldDir");
 
     // this.addComponent("Ability", {
     //   attackBehavior: {
-    //     name: "orbit",
-    //     orbitSpeed: 100,
-    //     radius: { x: 400, y: 400 },
-    //     startAngle: 0,
+    //     name: "rigid",
+    //     movementSpeed: 500,
     //   },
     //   attackMeta: {
     //     baseDmg: 15,
-    //     lifespan: 0,
-    //     name: "skull",
+    //     lifespan: 2,
+    //     name: "purpleArrow",
     //     hitType: "pierce",
     //   },
     //   spawnMode: {
-    //     type: "persistent",
-    //     delay: 0,
+    //     type: "spawnOnDelay",
+    //     delay: 3,
     //     where: "onSelf",
-    //     count: 6,
-    //     angleStep: 60,
+    //     count: 16,
+    //     angleStep: 22.5, // 16 × 22.5° = 360° — pełny obrót
+    //     burstInterval: 0.06,
     //   },
-    //   directionStrategy: { name: "none" },
+    //   directionStrategy: { name: "angle", deg: 0 },
     // });
-
     this.addComponent("Ability", {
       attackBehavior: {
-        name: "orbit",
-        orbitSpeed: 50,
-        radius: { x: 400, y: 400 },
-        startAngle: 0,
+        name: "projectile",
+        movementSpeed: 500,
+        direction: { name: "angle", deg: 45 },
       },
       attackMeta: {
         baseDmg: 15,
-        lifeSpan: 0,
-        attackName: "skull",
+        lifeSpan: 2,
+        attackName: "purpleArrow",
         hitType: "pierce",
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
       },
       spawnMode: {
-        type: "persistent",
-        abilityDelay: 0,
+        type: "spawnAtOnce",
+        abilityDelay: 3,
         where: "onSelf",
-        count: 6,
-        angleStep: 60,
+        count: 4,
+        angleStep: 90,
       },
     });
     this.addComponent("Relation", { parentChar: parentID });
