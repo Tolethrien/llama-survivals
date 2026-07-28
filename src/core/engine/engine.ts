@@ -4,6 +4,7 @@ import InputManager from "@engine/inputManager";
 import Time from "@engine/time";
 import Dogma from "../dogma/dogma";
 import Aurora from "../aurora/core";
+import Renderer from "../aurora/renderer/renderer";
 
 export default class Engine {
   declare private static canvas: HTMLCanvasElement;
@@ -26,7 +27,9 @@ export default class Engine {
   private static loop(currentTime: number) {
     Time.update(currentTime);
     InputManager.updateInputs();
+    Renderer.beginBatch();
     Dogma.tickAll();
+    Renderer.endBatch();
     requestAnimationFrame((currentTime) => this.loop(currentTime));
   }
 

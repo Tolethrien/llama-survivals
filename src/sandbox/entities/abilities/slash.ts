@@ -20,6 +20,7 @@ export default class Slash extends DogmaEntity {
         attackRange: "melee",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "remove",
       },
       spawnMode: {
         type: "spawnAtOnce",

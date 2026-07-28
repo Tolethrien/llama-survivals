@@ -20,6 +20,7 @@ export default class ArrowMachine extends DogmaEntity {
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "live",
       },
       spawnMode: {
         type: "spawnAtOnce",

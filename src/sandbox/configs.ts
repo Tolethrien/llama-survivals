@@ -9,7 +9,8 @@ import AIPerception from "./systems/AIPerception";
 import AISwarm from "./systems/AISwarm";
 import GameInputs from "./systems/gameInput";
 import Physics from "./systems/physics";
-import Render from "./systems/render";
+import RenderGame from "./systems/renderGame";
+import RenderUI from "./systems/renderUI";
 import LifeSpan from "./components/lifespan";
 import LifeCycle from "./systems/LifeCycle";
 import CharacterStats from "./components/characterStats";
@@ -31,6 +32,8 @@ import Spawner from "./systems/spawner";
 import Slash from "./entities/abilities/slash";
 import Projectile from "./components/projectile";
 import Spiraler from "./entities/abilities/spiraler";
+import Magnet from "./components/magnet";
+import CoinGather from "./systems/coinGather";
 
 export const abilities = {
   Aura,
@@ -45,7 +48,8 @@ export const dogmaConfig = {
   systems: {
     GameInputs,
     Physics,
-    Render,
+    RenderGame,
+    RenderUI,
     AIPerception,
     AISwarm,
     Collision,
@@ -53,6 +57,7 @@ export const dogmaConfig = {
     DamageCalculator,
     AttackDirector,
     Spawner,
+    CoinGather,
   },
   components: {
     Rigid,
@@ -72,5 +77,6 @@ export const dogmaConfig = {
     Orbit,
     Fraction,
     Projectile,
+    Magnet,
   },
 } satisfies DogmaConfig;

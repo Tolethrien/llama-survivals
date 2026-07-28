@@ -10,8 +10,9 @@ const MAP_CONFIG = {
 export const RENDER_LAYER = {
   ground: 0,
   groundAttacks: 0.1,
-  main: 0.2,
-  overlay: 0.3,
+  onGround: 0.2,
+  main: 0.3,
+  overlay: 0.4,
 };
 
 export default class BattleScene {
@@ -30,7 +31,10 @@ export default class BattleScene {
     main.addSystem("DamageCalculator");
     main.addSystem("LifeCycle");
     main.addSystem("Spawner");
-    main.addSystem("Render");
+    main.addSystem("CoinGather");
+    main.addSystem("RenderGame");
+    main.addSystem("RenderUI");
+
     const player = new Player();
     EntityManager.spawnEntity(player, "battle");
     console.log(player);

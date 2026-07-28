@@ -1,8 +1,8 @@
 import DogmaComponent, { InternalDCProps } from "@/core/dogma/component";
-import { DmgType, HitTracking } from "../managers/attackManager";
+import { AttackMeta, HitTracking } from "../managers/attackManager";
 interface AttackProps {
   baseDamage: number;
-  damageType: DmgType;
+  damageType: AttackMeta["damageType"];
   hitType: HitTracking["hitType"];
   // impactType: number;
   // range: "melee" | "projectile";

@@ -41,6 +41,7 @@ export default class WorldDir extends DogmaEntity {
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "live",
       },
       spawnMode: {
         type: "spawnAtOnce",

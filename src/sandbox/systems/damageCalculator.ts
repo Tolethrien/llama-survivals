@@ -4,6 +4,9 @@ import DogmaSystem, {
   SystemComponent,
 } from "@/core/dogma/system";
 import { HitEvent } from "./collisions";
+import Coin from "../entities/coin";
+import AxiomMath from "@/core/axiom/math";
+import { CoinSpawnEvent } from "./coinGather";
 
 export default class DamageCalculator extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
@@ -39,16 +42,22 @@ export default class DamageCalculator extends DogmaSystem {
     toRemove.forEach((ID) => this.deleteEntity(ID));
   }
   private deleteEntity(ID: Symbol) {
-    //TODO: czy usuwajac encje chce serio usuwac jej ataki tez juz wystrzelone?
     const eq = this.getComponent(ID, "Equipment")!;
+    const transform = this.getComponent(ID, "Transform")!;
     for (const slot of eq.slots) {
       const relation = this.getComponent(slot.abilityID, "Relation")!;
-      relation.children.forEach((child) =>
-        EntityManager.removeEntity(child, "battle"),
-      );
+      const ability = this.getComponent(slot.abilityID, "Ability")!;
+      if (ability.attackMeta.onCasterDeath === "remove") {
+        relation.children.forEach((child) =>
+          EntityManager.removeEntity(child, "battle"),
+        );
+      }
       EntityManager.removeEntity(slot.abilityID, "battle");
     }
     EntityManager.removeEntity(ID, "battle");
+    this.events.emitCascade<CoinSpawnEvent>("spawnCoinEvent", {
+      deadPos: transform.position,
+    });
   }
   private deleteAttack(ID: Symbol) {
     const relation = this.getComponent(ID, "Relation")!;

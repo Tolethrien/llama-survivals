@@ -47,6 +47,7 @@ export type AttackMeta = {
   baseDmg: number;
   hitType: "hit" | "pierce" | "aura";
   attackRange: "melee" | "projectile";
+  onCasterDeath: "live" | "remove";
 };
 
 export type HitTracking =

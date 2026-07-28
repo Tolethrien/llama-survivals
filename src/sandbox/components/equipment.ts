@@ -8,11 +8,15 @@ interface Slot {
 }
 interface EquipmentProps {
   slots: (keyof typeof abilities)[];
+  abilitiesCap?: number;
 }
 export default class Equipment extends DogmaComponent {
   public slots: Slot[];
+  abilitiesCap: number;
+
   constructor(internalProps: InternalDCProps, props?: EquipmentProps) {
     super(internalProps);
+    this.abilitiesCap = props?.abilitiesCap ?? 1;
     this.slots = props?.slots
       ? props.slots.map((slot) => {
           const attack = new abilities[slot](this.ID);

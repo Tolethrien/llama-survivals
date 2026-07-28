@@ -2,8 +2,11 @@ import Vec2 from "@/core/axiom/vec2";
 import DogmaSystem, { InternalDSProps } from "@/core/dogma/system";
 import Time from "@/core/engine/time";
 import { getOrbitPosition, getStickPosition } from "@/utils/utils";
+import { CoinReachedEvent } from "./coinGather";
+import InputManager from "@/core/engine/inputManager";
 
 //DO NOT USE 2 TYPES OF MOVEMENT AT ONES IN ENTITY!
+let stop = 1;
 export default class Physics extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
@@ -15,11 +18,17 @@ export default class Physics extends DogmaSystem {
     });
   }
   private physSystem() {
-    const dt = Time.getFixedDeltaTime();
+    if (InputManager.isKeyPressed("p")) {
+      if (stop === 0) stop = 1;
+      else stop = 0;
+      Time.setTimeSpeed(stop);
+    }
+    let dt = Time.getFixedDeltaTime();
     this.updateRigidMovements(dt);
     this.updateProjectileMovements(dt);
     this.updateOrbitalMovement(dt);
     this.updateStickMovement();
+    this.updateMagnetMovement(dt);
     // this.updateReboundMovement(dt);
     // this.updatePtoPMovement(dt);
   }
@@ -90,6 +99,43 @@ export default class Physics extends DogmaSystem {
       );
       transform.prevPosition.copy(transform.position);
       transform.position.set(pos.x, pos.y);
+    });
+  }
+  private updateMagnetMovement(dt: number) {
+    const components = this.getComponentList("Magnet");
+    if (!components) return;
+    components.forEach((magnet) => {
+      if (magnet.state !== "follow") return;
+      const transform = this.getComponent(magnet.ID, "Transform");
+      const targetTransform = this.getComponent(magnet.targetID, "Transform");
+      if (!transform || !targetTransform) return;
+
+      const selfCenter = Vec2.create(
+        transform.position.x + transform.size.width * 0.5,
+        transform.position.y + transform.size.height * 0.5,
+      );
+      const targetCenter = Vec2.create(
+        targetTransform.position.x + targetTransform.size.width * 0.5,
+        targetTransform.position.y + targetTransform.size.height * 0.5,
+      );
+      const toTarget = targetCenter.sub(selfCenter);
+      const distSq = toTarget.lengthSquared();
+
+      const pickupRadius =
+        transform.size.width * 0.5 + targetTransform.size.width * 0.5;
+      if (distSq <= pickupRadius * pickupRadius) {
+        magnet.state = "gathered";
+        this.events.emitCascade<CoinReachedEvent>("coinReached", {
+          ID: magnet.ID,
+        });
+        return;
+      }
+      const desiredVelocity =
+        distSq > 1 ? toTarget.normalize().scale(magnet.speed) : Vec2.Zero;
+
+      magnet.velocity.lerp(desiredVelocity, magnet.pullStrength * dt);
+      transform.prevPosition.copy(transform.position);
+      transform.position.add(magnet.velocity.clone().scale(dt));
     });
   }
 

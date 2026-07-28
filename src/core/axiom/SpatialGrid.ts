@@ -27,7 +27,13 @@ export default class SpatialGrid<T> {
     }
     return keys;
   }
-
+  clearAll() {
+    this.cells.clear();
+    this.registry.clear();
+  }
+  public entries(): SpatialGridItem<T>[] {
+    return Array.from(this.registry.values()).map((entry) => entry.item);
+  }
   private addToCell(key: number, item: SpatialGridItem<T>) {
     let cell = this.cells.get(key);
     if (!cell) {

@@ -10,15 +10,15 @@ export default class Time {
   private static lastTime: number = 0;
   private static accumulator: number = 0;
   private static currentFrameDt: number = 0;
-
+  private static timeSpeed: number = 1;
   public static getDeltaTime() {
-    return this.deltaTime;
+    return this.deltaTime * this.timeSpeed;
   }
   public static getFrameTime() {
     return this.frameTime;
   }
   public static getFixedDeltaTime() {
-    return this.FIXED_DT_S;
+    return this.FIXED_DT_S * this.timeSpeed;
   }
   public static getAlpha() {
     return this.alpha;
@@ -33,7 +33,9 @@ export default class Time {
   public static initTimer(startTime: number) {
     this.lastTime = startTime;
   }
-
+  public static setTimeSpeed(speed: number) {
+    this.timeSpeed = speed;
+  }
   public static update(currentTime: number) {
     let dt = currentTime - this.lastTime;
     this.lastTime = currentTime;

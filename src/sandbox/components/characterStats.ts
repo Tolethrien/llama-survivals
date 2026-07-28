@@ -1,13 +1,14 @@
 import DogmaComponent, { InternalDCProps } from "@/core/dogma/component";
-import { DmgType } from "../managers/attackManager";
+import { AttackMeta } from "../managers/attackManager";
 interface CharStats {
   minHP: number;
   maxHP: number;
   swingSpeedInc: number;
   damageIncrease: number;
-  DamageTypeIncrease: Record<DmgType, number>;
-  resist: Record<DmgType, number>;
-  maxResist: Record<DmgType, number>;
+  DamageTypeIncrease: Record<AttackMeta["damageType"], number>;
+  resist: Record<AttackMeta["damageType"], number>;
+  maxResist: Record<AttackMeta["damageType"], number>;
+  coinCollectRadius: number;
 }
 interface StatsProps {
   minHP: CharStats["minHP"];
@@ -17,6 +18,7 @@ interface StatsProps {
   DamageTypeIncrease: CharStats["DamageTypeIncrease"];
   resist: CharStats["resist"];
   maxResist: CharStats["maxResist"];
+  coinCollectRadius?: CharStats["coinCollectRadius"];
 }
 export default class CharacterStats extends DogmaComponent {
   public minHP: CharStats["minHP"];
@@ -27,6 +29,7 @@ export default class CharacterStats extends DogmaComponent {
   public DamageTypeIncrease: CharStats["DamageTypeIncrease"];
   public resist: CharStats["resist"];
   public maxResist: CharStats["maxResist"];
+  public coinCollectRadius: CharStats["coinCollectRadius"];
   constructor(internalProps: InternalDCProps, props: StatsProps) {
     super(internalProps);
     this.minHP = props.minHP;
@@ -37,5 +40,6 @@ export default class CharacterStats extends DogmaComponent {
     this.DamageTypeIncrease = props.DamageTypeIncrease;
     this.resist = props.resist;
     this.maxResist = props.maxResist;
+    this.coinCollectRadius = props.coinCollectRadius ?? 0;
   }
 }

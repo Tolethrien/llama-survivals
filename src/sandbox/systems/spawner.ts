@@ -9,17 +9,42 @@ import Ork from "../entities/enemies/ork";
 //spawner musi miec jakis rodzaj delayu miedzy spawnami
 //spawner musi miec build fali czyli ile i czego i gdzie i jak
 type ViewSide = "top" | "right" | "bottom" | "left";
+export type BattleProgressData = {
+  coins: number;
+  lvl: number;
+  nextLvlCoin: number;
+  nextLvlMultiplier: number;
+};
 export default class Spawner extends DogmaSystem {
   private spawnDelay: number = 0.1; //s
   private currentTime: number = 0;
+  private lvlCheckInterval: number = 1; // s
+  private lvlCheckTimer: number = 0;
+  private pendingLevelUps: number = 0;
+  declare private battleProgressData: BattleProgressData;
   constructor(internal: InternalDSProps) {
     super(internal);
   }
   public onStart(): void {
-    this.subscribeToPhase({ phase: "update", callback: this.spawn.bind(this) });
-    // const pos = this.getRandomOutsideViewPosition();
-    // const archer = new Ork({ position: pos });
-    // EntityManager.spawnEntity(archer, "battle");
+    this.subscribeToPhase({
+      phase: "update",
+      callback: this.spawnerUpdater.bind(this),
+    });
+    this.battleProgressData = {
+      coins: 0,
+      lvl: 1,
+      nextLvlCoin: 1,
+      nextLvlMultiplier: 1,
+    };
+    this.setSharedData<BattleProgressData>(
+      "scene",
+      "battleProgressData",
+      this.battleProgressData,
+    );
+  }
+  private spawnerUpdater() {
+    this.tickLvlCheck();
+    this.spawn();
   }
   private spawn() {
     const dt = Time.getDeltaTime();
@@ -68,9 +93,37 @@ export default class Spawner extends DogmaSystem {
         };
     }
   }
-
+  private tickLvlCheck() {
+    const gained = this.validateLvl();
+    this.pendingLevelUps += gained;
+    const dt = Time.getDeltaTime();
+    this.lvlCheckTimer -= dt;
+    if (this.lvlCheckTimer <= 0) {
+      if (this.pendingLevelUps > 0) console.log(this.pendingLevelUps);
+      this.pendingLevelUps = 0;
+      this.lvlCheckTimer = this.lvlCheckInterval;
+    }
+  }
   private pickRandomSide(): ViewSide {
     const sides: ViewSide[] = ["top", "right", "bottom", "left"];
     return sides[AxiomMath.randomInt(0, 3)];
+  }
+  private validateLvl() {
+    const { coins, lvl, nextLvlMultiplier } = this.battleProgressData;
+
+    const a = nextLvlMultiplier / 2;
+    const b = nextLvlMultiplier * (lvl - 0.5);
+    const c = -coins;
+    const discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) return 0;
+
+    const k = Math.floor((-b + Math.sqrt(discriminant)) / (2 * a));
+    if (k <= 0) return 0;
+    const cost = nextLvlMultiplier * (k * lvl + (k * (k - 1)) / 2);
+    this.battleProgressData.lvl += k;
+    this.battleProgressData.coins -= cost;
+    this.battleProgressData.nextLvlCoin =
+      this.battleProgressData.nextLvlMultiplier * this.battleProgressData.lvl;
+    return k;
   }
 }

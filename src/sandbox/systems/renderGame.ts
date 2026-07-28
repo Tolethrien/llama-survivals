@@ -9,10 +9,13 @@ import DogmaSystem, {
   SystemComponent,
 } from "@/core/dogma/system";
 import Time from "@/core/engine/time";
-import { createColliderBox, getOrbitPosition } from "@/utils/utils";
+import { assert, createColliderBox, getOrbitPosition } from "@/utils/utils";
+import { BattleProgressData } from "./spawner";
 const DRAW_MARGIN = 128;
 const Y_SORT_FACTOR = 1000000;
-export default class Render extends DogmaSystem {
+export default class RenderGame extends DogmaSystem {
+  declare private battleProgressData: BattleProgressData;
+
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
   }
@@ -33,13 +36,9 @@ export default class Render extends DogmaSystem {
       width: viewBox.w / 2 + DRAW_MARGIN,
       height: viewBox.h / 2 + DRAW_MARGIN,
     };
-    Renderer.beginBatch();
     this.updateCamera(alpha);
     this.renderSprites(cameraPos, drawDistance, alpha);
     // this.renderColliders(cameraPos, drawDistance, alpha);
-    this.renderUI();
-
-    Renderer.endBatch();
   }
 
   updateCamera(alpha: number) {
@@ -88,27 +87,7 @@ export default class Render extends DogmaSystem {
       });
     });
   }
-  private renderUI() {
-    const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
-    const hp = AxiomMath.map(stats.currentHP, 0, stats.maxHP, 0, 50);
-    Draw.guiRect({
-      position: {
-        x: Aurora.canvas.width / 2 - 25 - 2,
-        y: Aurora.canvas.height / 2 - 30 - 2,
-      },
-      size: { width: 50 + 4, height: 4 + 4 },
-      tint: [0, 0, 0, 170],
-    });
 
-    Draw.guiRect({
-      position: {
-        x: Aurora.canvas.width / 2 - 25,
-        y: Aurora.canvas.height / 2 - 30,
-      },
-      size: { width: hp, height: 4 },
-      tint: [255, 0, 0, 150],
-    });
-  }
   private resolveOrbitRenderPos(ID: Symbol, alpha: number): Position2D | null {
     const orbit = this.getComponent(ID, "Orbit");
     const transform = this.getComponent(ID, "Transform");

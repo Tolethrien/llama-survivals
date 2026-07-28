@@ -6,6 +6,7 @@ import ground from "./assets/ground.png";
 import mobs from "./assets/monsta.png";
 import auras from "./assets/auras.png";
 import spells from "./assets/spells.png";
+import items from "./assets/items.png";
 async function preload() {
   const aurora = auroraConfig({
     userTextures: [
@@ -13,13 +14,14 @@ async function preload() {
       { name: "mobs", url: mobs },
       { name: "auras", url: auras },
       { name: "spells", url: spells },
+      { name: "items", url: items },
     ],
     userFonts: [],
     feature: {
       bloom: false,
       lighting: false,
     },
-    debugger: "normal",
+    debugger: "none",
     camera: { builtInCameraInputs: false, speed: 15 },
     rendering: {
       sortOrder: "y",

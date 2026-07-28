@@ -44,6 +44,7 @@ export default class Skulls extends DogmaEntity {
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "remove",
       },
       spawnMode: {
         type: "persistent",

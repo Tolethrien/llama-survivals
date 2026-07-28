@@ -20,14 +20,15 @@ export default class Spiraler extends DogmaEntity {
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "live",
       },
       spawnMode: {
         type: "spawnOnDelay",
-        abilityDelay: 3,
+        abilityDelay: 1,
         where: "onSelf",
-        count: 10,
-        angleStep: 360 / 10, // 16 × 22.5° = 360° — pełny obrót
-        delay: 0.3, // odstęp między kolejnymi strzałami w serii (dawne burstInterval)
+        count: 16,
+        angleStep: 360 / 16, // 16 × 22.5° = 360° — pełny obrót
+        delay: 0.01, // odstęp między kolejnymi strzałami w serii (dawne burstInterval)
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

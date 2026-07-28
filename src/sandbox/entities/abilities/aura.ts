@@ -21,6 +21,7 @@ export default class aura extends DogmaEntity {
         attackRange: "melee",
         damageType: "physical",
         impactType: "impact",
+        onCasterDeath: "remove",
       },
       spawnMode: {
         type: "persistent",
