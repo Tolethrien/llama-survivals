@@ -5,7 +5,6 @@ import DogmaSystem, {
 import { assert, createColliderBox, getColliderCenter } from "@/utils/utils";
 import { EnemyState } from "../components/enemyAI";
 import SpatialGrid from "@/core/axiom/spatialGridFrame";
-import AxiomMath from "@/core/axiom/math";
 export type EnemyPerceptionData = {
   combat: Set<Symbol>;
   swarm: Set<Symbol>;

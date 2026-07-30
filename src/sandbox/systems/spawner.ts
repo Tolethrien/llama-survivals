@@ -15,6 +15,9 @@ export type BattleProgressData = {
   nextLvlCoin: number;
   nextLvlMultiplier: number;
 };
+export type LvlUpEvent = {
+  lvls: number;
+};
 export default class Spawner extends DogmaSystem {
   private spawnDelay: number = 0.1; //s
   private currentTime: number = 0;
@@ -99,7 +102,11 @@ export default class Spawner extends DogmaSystem {
     const dt = Time.getDeltaTime();
     this.lvlCheckTimer -= dt;
     if (this.lvlCheckTimer <= 0) {
-      if (this.pendingLevelUps > 0) console.log(this.pendingLevelUps);
+      if (this.pendingLevelUps > 0) {
+        this.events.emitCascade<LvlUpEvent>("lvlUpEvent", {
+          lvls: this.pendingLevelUps,
+        });
+      }
       this.pendingLevelUps = 0;
       this.lvlCheckTimer = this.lvlCheckInterval;
     }

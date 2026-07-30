@@ -23,6 +23,7 @@ export default class BattleScene {
   private spawnWorld() {
     const main = Dogma.createScene("battle");
     main.addSystem("GameInputs");
+    main.addSystem("UIInputs");
     main.addSystem("AIPerception");
     main.addSystem("AISwarm");
     main.addSystem("Physics");
@@ -32,8 +33,9 @@ export default class BattleScene {
     main.addSystem("LifeCycle");
     main.addSystem("Spawner");
     main.addSystem("CoinGather");
+    main.addSystem("LvlUpGui");
     main.addSystem("RenderGame");
-    main.addSystem("RenderUI");
+    // main.addSystem("RenderUI");
 
     const player = new Player();
     EntityManager.spawnEntity(player, "battle");

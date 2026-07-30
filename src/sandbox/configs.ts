@@ -34,6 +34,9 @@ import Projectile from "./components/projectile";
 import Spiraler from "./entities/abilities/spiraler";
 import Magnet from "./components/magnet";
 import CoinGather from "./systems/coinGather";
+import UINode from "./components/UINode";
+import LvlUpGui from "./systems/lvlUpGui";
+import UIInputs from "./systems/uiInputs";
 
 export const abilities = {
   Aura,
@@ -58,6 +61,8 @@ export const dogmaConfig = {
     AttackDirector,
     Spawner,
     CoinGather,
+    LvlUpGui,
+    UIInputs,
   },
   components: {
     Rigid,
@@ -78,5 +83,6 @@ export const dogmaConfig = {
     Fraction,
     Projectile,
     Magnet,
+    UINode,
   },
 } satisfies DogmaConfig;

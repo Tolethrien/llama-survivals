@@ -36,11 +36,11 @@ export default class Player extends DogmaEntity {
       },
       resist: { cold: 0, energy: 0, fire: 0, heal: 0, physical: 0, poison: 0 },
       swingSpeedInc: 0,
-      coinCollectRadius: 50,
+      coinCollectRadius: 100,
     });
 
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine", "Aura", "Skulls", "WorldDir", "Spiraler"],
+      slots: ["ArrowMachine", "Skulls", "WorldDir", "Spiraler"],
       abilitiesCap: 4,
     });
     this.addComponent("Rigid", { speed: 300 });

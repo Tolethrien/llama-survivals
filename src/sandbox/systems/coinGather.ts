@@ -8,8 +8,8 @@ import Coin from "../entities/coin";
 import EntityManager from "@/core/dogma/entityManager";
 import items from "../assets/items.json";
 import { assert } from "@/utils/utils";
-import { BattleProgressData } from "./battleManager";
 import InputManager from "@/core/engine/inputManager";
+import { BattleProgressData } from "./spawner";
 export type CoinSpawnEvent = {
   deadPos: Position2D;
 };

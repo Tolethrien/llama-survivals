@@ -13,8 +13,7 @@ export default class Coin extends DogmaEntity {
     });
     this.addComponent("Magnet", {
       pullStrength: 2,
-      range: 200,
-      speed: 350,
+      speed: 550,
       targetID: target,
     });
     this.addComponent("Sprite", {

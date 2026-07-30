@@ -5,7 +5,6 @@ interface MagnetProps {
   targetID: Symbol;
   speed: number;
   pullStrength: number;
-  range: number;
 }
 export default class Magnet extends DogmaComponent {
   public targetID: Symbol;
@@ -20,7 +19,6 @@ export default class Magnet extends DogmaComponent {
     this.targetID = props.targetID;
     this.speed = props.speed;
     this.pullStrength = props.pullStrength;
-    this.range = props.range;
     this.velocity = Vec2.Zero;
     this.state = "idle";
   }
