@@ -5,6 +5,7 @@ import Archer from "../entities/enemies/archer";
 import AuroraCamera from "@/core/aurora/camera";
 import AxiomMath from "@/core/axiom/math";
 import Ork from "../entities/enemies/ork";
+import Dogma from "@/core/dogma/dogma";
 //spawner musi cala fale spawnowac naraz
 //spawner musi miec jakis rodzaj delayu miedzy spawnami
 //spawner musi miec build fali czyli ile i czego i gdzie i jak
@@ -18,6 +19,8 @@ export type BattleProgressData = {
 export type LvlUpEvent = {
   lvls: number;
 };
+const LVL_MULTI = 10;
+const ENEMY_MULTI = 10;
 export default class Spawner extends DogmaSystem {
   private spawnDelay: number = 0.1; //s
   private currentTime: number = 0;
@@ -36,8 +39,8 @@ export default class Spawner extends DogmaSystem {
     this.battleProgressData = {
       coins: 0,
       lvl: 1,
-      nextLvlCoin: 1,
-      nextLvlMultiplier: 1,
+      nextLvlCoin: LVL_MULTI,
+      nextLvlMultiplier: LVL_MULTI,
     };
     this.setSharedData<BattleProgressData>(
       "scene",
@@ -58,6 +61,8 @@ export default class Spawner extends DogmaSystem {
     }
   }
   private spawnWave() {
+    const enemies = this.getComponentsWithTags("Transform", ["enemy"]);
+    if (enemies.size >= this.battleProgressData.lvl * ENEMY_MULTI) return;
     const pos = this.getRandomOutsideViewPosition();
     const isArch = AxiomMath.randomBool();
     let mob: Ork | Archer | undefined = undefined;

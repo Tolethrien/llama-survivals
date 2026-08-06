@@ -38,10 +38,16 @@ export default class Player extends DogmaEntity {
       swingSpeedInc: 0,
       coinCollectRadius: 100,
     });
-
+    this.addComponent("BuffList");
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine", "Skulls", "WorldDir", "Spiraler"],
+      slots: ["ArrowMachine", "Skulls"],
       abilitiesCap: 4,
+      items: [
+        { amount: 1, item: "timeSlow" },
+        { amount: 1, item: "gatherCoins" },
+        { amount: 0, item: undefined },
+        { amount: 0, item: undefined },
+      ],
     });
     this.addComponent("Rigid", { speed: 300 });
     this.addComponent("Collider", {

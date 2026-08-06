@@ -2,14 +2,15 @@ import DogmaEntity from "@/core/dogma/entity";
 import items from "../assets/items.json";
 import { RENDER_LAYER } from "../scenes/battleScene";
 
-export default class Coin extends DogmaEntity {
+export default class XPBig extends DogmaEntity {
   constructor(pos: Position2D, target: Symbol) {
     super();
     this.addTag("Item");
-    this.addTag("Coin");
+    this.addTag("XP");
+    this.addTag("XP_Big");
     this.addComponent("Transform", {
       position: pos,
-      size: { height: items.coin.height, width: items.coin.width },
+      size: { height: items.xp_big.height, width: items.xp_big.width },
     });
     this.addComponent("Magnet", {
       pullStrength: 2,
@@ -18,7 +19,7 @@ export default class Coin extends DogmaEntity {
     });
     this.addComponent("Sprite", {
       spriteName: "items",
-      crop: items.coin,
+      crop: items.xp_big,
       renderMode: "lerpPos",
       layer: RENDER_LAYER.onGround,
     });

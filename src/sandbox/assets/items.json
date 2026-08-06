@@ -1,1 +1,5 @@
-{"coin":{"x":0,"y":0,"width":32,"height":32}}
+{
+    "xp_small":{"x": 0,"y":0,"width":32,"height":32},
+    "xp_big"  :{"x":32,"y":0,"width":32,"height":32},
+    "chest"   :{"x":64,"y":0,"width":64,"height":64}
+}

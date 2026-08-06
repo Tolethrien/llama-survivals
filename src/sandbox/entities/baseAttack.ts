@@ -1,7 +1,7 @@
 import DogmaEntity from "@/core/dogma/entity";
 
 import { RENDER_LAYER } from "../scenes/battleScene";
-import { AttackEntry, AttackShapeList } from "./attacks";
+import { AttackEntry, AttackShapeList } from "../db/attacksRender";
 import {
   AttackBehavior,
   AttackMeta,

@@ -1,18 +1,9 @@
-import AuroraCamera from "@/core/aurora/camera";
 import Aurora from "@/core/aurora/core";
 import Draw from "@/core/aurora/draw";
-import Renderer from "@/core/aurora/renderer/renderer";
 import AxiomMath from "@/core/axiom/math";
-import Vec2 from "@/core/axiom/vec2";
-import DogmaSystem, {
-  InternalDSProps,
-  SystemComponent,
-} from "@/core/dogma/system";
-import Time from "@/core/engine/time";
-import { assert, createColliderBox, getOrbitPosition } from "@/utils/utils";
+import DogmaSystem, { InternalDSProps } from "@/core/dogma/system";
+import { assert } from "@/utils/utils";
 import { BattleProgressData } from "./spawner";
-const DRAW_MARGIN = 128;
-const Y_SORT_FACTOR = 1000000;
 export default class Render extends DogmaSystem {
   declare private battleProgressData: BattleProgressData;
 
@@ -38,18 +29,9 @@ export default class Render extends DogmaSystem {
 
   renderer() {
     this.renderInterface();
-    this.renderLvlGainer();
+    this.renderItemSlots();
   }
-  private renderLvlGainer() {
-    Draw.guiRect({
-      position: {
-        x: 100,
-        y: 100,
-      },
-      size: { width: 500, height: 500 },
-      tint: [0, 0, 0, 170],
-    });
-  }
+
   private renderInterface() {
     const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
     const hp = AxiomMath.map(stats.currentHP, 0, stats.maxHP, 0, 50);
@@ -116,6 +98,60 @@ export default class Render extends DogmaSystem {
       position: { mode: "pixel", x: Aurora.canvas.width - 80, y: 30 },
       text: `Lvl:${this.battleProgressData.lvl}`,
       fontColor: [0, 0, 0, 255],
+    });
+  }
+  private renderItemSlots() {
+    const x = 80;
+    const y = Aurora.canvas.height - 120;
+    const size = 40;
+    const gap = size + 5;
+    Draw.guiRect({
+      position: { x: x + gap, y: y },
+      size: { width: size, height: size },
+      tint: [255, 0, 0, 155],
+    });
+    Draw.guiText({
+      position: { x: x + gap + 10, y: y, mode: "pixel" },
+      fontColor: [255, 255, 255, 255],
+      font: "lato",
+      fontSize: { mode: "pixel", size: 32 },
+      text: "Z",
+    });
+    Draw.guiRect({
+      position: { x: x - gap, y: y },
+      size: { width: size, height: size },
+      tint: [255, 0, 0, 155],
+    });
+    Draw.guiText({
+      position: { x: x - gap + 10, y: y, mode: "pixel" },
+      fontColor: [255, 255, 255, 255],
+      font: "lato",
+      fontSize: { mode: "pixel", size: 32 },
+      text: "X",
+    });
+    Draw.guiRect({
+      position: { x: x, y: y - gap },
+      size: { width: size, height: size },
+      tint: [255, 0, 0, 155],
+    });
+    Draw.guiText({
+      position: { x: x + 10, y: y - gap, mode: "pixel" },
+      fontColor: [255, 255, 255, 255],
+      font: "lato",
+      fontSize: { mode: "pixel", size: 32 },
+      text: "C",
+    });
+    Draw.guiRect({
+      position: { x: x, y: y + gap },
+      size: { width: size, height: size },
+      tint: [255, 0, 0, 155],
+    });
+    Draw.guiText({
+      position: { x: x + 10, y: y + gap, mode: "pixel" },
+      fontColor: [255, 255, 255, 255],
+      font: "lato",
+      fontSize: { mode: "pixel", size: 32 },
+      text: "V",
     });
   }
 }

@@ -70,6 +70,16 @@ export default class AxiomMath {
   static randomInt(min: number, max: number) {
     return Math.floor(AxiomMath.randomFloat(min, max + 1));
   }
+  static pickRandomN<T>(arr: T[], n: number): T[] {
+    const copy = Array.from(arr);
+    const result: T[] = [];
+    for (let i = 0; i < n && copy.length > 0; i++) {
+      const index = AxiomMath.randomInt(0, copy.length - 1);
+      result.push(copy[index]);
+      copy.splice(index, 1);
+    }
+    return result;
+  }
   static degToRad(deg: number) {
     return (deg * Math.PI) / 180;
   }

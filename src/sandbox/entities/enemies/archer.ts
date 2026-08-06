@@ -45,7 +45,7 @@ export default class Archer extends DogmaEntity {
       personalSpace: 1.2,
     });
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine", "WorldDir"],
+      slots: ["ArrowMachine"],
     });
     this.addComponent("Collider", {
       shape: "rect",

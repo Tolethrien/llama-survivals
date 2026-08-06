@@ -7,6 +7,7 @@ import mobs from "./assets/monsta.png";
 import auras from "./assets/auras.png";
 import spells from "./assets/spells.png";
 import items from "./assets/items.png";
+import foliage from "./assets/foliage.png";
 async function preload() {
   const aurora = auroraConfig({
     userTextures: [
@@ -15,6 +16,7 @@ async function preload() {
       { name: "auras", url: auras },
       { name: "spells", url: spells },
       { name: "items", url: items },
+      { name: "foliage", url: foliage },
     ],
     userFonts: [],
     feature: {

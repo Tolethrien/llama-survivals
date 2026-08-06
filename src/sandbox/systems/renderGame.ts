@@ -26,6 +26,10 @@ export default class RenderGame extends DogmaSystem {
       callback: this.renderer.bind(this),
     });
     AuroraCamera.scale(0.5);
+    Renderer.setPostProcess({
+      vignette: { str: 0.4, radius: 0.85 },
+      chromaticAberration: { str: 0.05 },
+    });
   }
 
   renderer() {

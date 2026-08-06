@@ -2,7 +2,7 @@ import Vec2 from "@/core/axiom/vec2";
 import DogmaSystem, { InternalDSProps } from "@/core/dogma/system";
 import Time from "@/core/engine/time";
 import { getOrbitPosition, getStickPosition } from "@/utils/utils";
-import { CoinReachedEvent } from "./coinGather";
+import { CoinReachedEvent, CONSOLIDATE_UNIT } from "./xPGather";
 import InputManager from "@/core/engine/inputManager";
 
 //DO NOT USE 2 TYPES OF MOVEMENT AT ONES IN ENTITY!
@@ -124,9 +124,11 @@ export default class Physics extends DogmaSystem {
       const pickupRadius =
         transform.size.width * 0.5 + targetTransform.size.width * 0.5;
       if (distSq <= pickupRadius * pickupRadius) {
+        const value = magnet.tags.has("XP_Small") ? 1 : CONSOLIDATE_UNIT;
         magnet.state = "gathered";
         this.events.emitCascade<CoinReachedEvent>("coinReached", {
           ID: magnet.ID,
+          value: value,
         });
         return;
       }

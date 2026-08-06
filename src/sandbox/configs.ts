@@ -33,10 +33,14 @@ import Slash from "./entities/abilities/slash";
 import Projectile from "./components/projectile";
 import Spiraler from "./entities/abilities/spiraler";
 import Magnet from "./components/magnet";
-import CoinGather from "./systems/coinGather";
+import XpGather from "./systems/xPGather";
 import UINode from "./components/UINode";
 import LvlUpGui from "./systems/lvlUpGui";
 import UIInputs from "./systems/uiInputs";
+import ChestGather from "./systems/chestGather";
+import UseItem from "./systems/useItem";
+import BuffList from "./components/buff";
+import { Buffs } from "./systems/buffs";
 
 export const abilities = {
   Aura,
@@ -60,9 +64,12 @@ export const dogmaConfig = {
     DamageCalculator,
     AttackDirector,
     Spawner,
-    CoinGather,
+    XpGather,
     LvlUpGui,
     UIInputs,
+    ChestGather,
+    UseItem,
+    Buffs,
   },
   components: {
     Rigid,
@@ -84,5 +91,6 @@ export const dogmaConfig = {
     Projectile,
     Magnet,
     UINode,
+    BuffList,
   },
 } satisfies DogmaConfig;

@@ -140,4 +140,11 @@ export default class AuroraCamera {
       h: height / zoom,
     };
   }
+  public static worldToScreen(pos: Position2D): Position2D {
+    const zoom = this.zoom.current;
+    return {
+      x: this.origin.x + (pos.x - this.position.x) * zoom,
+      y: this.origin.y + (pos.y - this.position.y) * zoom,
+    };
+  }
 }

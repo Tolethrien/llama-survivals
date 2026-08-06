@@ -4,9 +4,9 @@ import DogmaSystem, {
   SystemComponent,
 } from "@/core/dogma/system";
 import { HitEvent } from "./collisions";
-import Coin from "../entities/coin";
+import Coin from "../entities/xpSmall";
 import AxiomMath from "@/core/axiom/math";
-import { CoinSpawnEvent } from "./coinGather";
+import { CoinSpawnEvent } from "./xPGather";
 
 export default class DamageCalculator extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {

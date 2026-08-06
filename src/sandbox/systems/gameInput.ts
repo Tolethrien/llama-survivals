@@ -5,19 +5,38 @@ import DogmaSystem, {
   SystemComponent,
 } from "@/core/dogma/system";
 import InputManager from "@/core/engine/inputManager";
+import Time from "@/core/engine/time";
 import { assert } from "@/utils/utils";
+export type ItemHoldEvent = {
+  key: keyof typeof ItemUseKey;
+  progress: number; // 0..1
+  state: "holding" | "completed" | "broken";
+};
+export enum ItemUseKey {
+  z,
+  x,
+  c,
+  v,
+}
 
+const ITEM_USE_KEYS = Object.keys(ItemUseKey).filter((k) =>
+  Number.isNaN(Number(k)),
+) as (keyof typeof ItemUseKey)[];
 export default class GameInputs extends DogmaSystem {
   private axis = Vec2.Zero;
   declare private playerRigid: SystemComponent<"Rigid">;
   declare private playerTransform: SystemComponent<"Transform">;
+  private holdRequired = 2;
+  private holdTimer = 2;
+  private isHolding: keyof typeof ItemUseKey | undefined = undefined;
+  private triggered = false;
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
   }
   public onStart(): void {
     this.subscribeToPhase({
       phase: "preUpdate",
-      callback: this.playerMovementInputs.bind(this),
+      callback: this.update.bind(this),
       before: ["Physics"],
     });
 
@@ -33,6 +52,10 @@ export default class GameInputs extends DogmaSystem {
     );
     this.playerRigid = rigid;
     this.playerTransform = transform;
+  }
+  private update() {
+    this.playerMovementInputs();
+    this.useItemInputs();
   }
   public playerMovementInputs() {
     this.axis.set(0, 0);
@@ -50,5 +73,49 @@ export default class GameInputs extends DogmaSystem {
     const mouseDir = InputManager.getMouseDirFromCenter();
     if (mouseDir.x !== 0 && mouseDir.y !== 0)
       this.playerTransform.faceDir.set(mouseDir.x, mouseDir.y);
+  }
+  private useItemInputs() {
+    if (this.isHolding === undefined) {
+      const pressedKey = ITEM_USE_KEYS.find((k) =>
+        InputManager.isKeyPressed(k),
+      );
+      if (!pressedKey) return;
+      this.isHolding = pressedKey;
+      this.holdTimer = this.holdRequired;
+      this.triggered = false;
+    }
+    const key = this.isHolding!;
+    if (!InputManager.isKeyHold(key)) {
+      if (!this.triggered) {
+        this.events.emitCascade<ItemHoldEvent>("itemHoldEvent", {
+          key,
+          progress: 1 - Math.max(this.holdTimer, 0) / this.holdRequired,
+          state: "broken",
+        });
+      }
+      this.isHolding = undefined;
+      this.holdTimer = this.holdRequired;
+      this.triggered = false;
+      return;
+    }
+
+    if (this.triggered) return;
+    this.holdTimer -= Time.getDeltaTime();
+    const progress = 1 - Math.max(this.holdTimer, 0) / this.holdRequired;
+    if (this.holdTimer <= 0) {
+      this.triggered = true;
+      this.events.emitCascade<ItemHoldEvent>("itemHoldEvent", {
+        key,
+        progress: 1,
+        state: "completed",
+      });
+      return;
+    }
+
+    this.events.emitCascade<ItemHoldEvent>("itemHoldEvent", {
+      key,
+      progress,
+      state: "holding",
+    });
   }
 }

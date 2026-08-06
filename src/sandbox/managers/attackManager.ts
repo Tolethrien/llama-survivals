@@ -1,5 +1,5 @@
 import { SystemComponent } from "@/core/dogma/system";
-import { AttackDisplayKey, AttackShapeList } from "../entities/attacks";
+import { AttackDisplayKey, AttackShapeList } from "../db/attacksRender";
 import BaseAttack from "../entities/baseAttack";
 import { getColliderCenter, getStickPosition } from "@/utils/utils";
 import AuroraCamera from "@/core/aurora/camera";
