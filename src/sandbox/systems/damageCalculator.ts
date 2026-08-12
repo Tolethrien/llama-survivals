@@ -4,8 +4,6 @@ import DogmaSystem, {
   SystemComponent,
 } from "@/core/dogma/system";
 import { HitEvent } from "./collisions";
-import Coin from "../entities/xpSmall";
-import AxiomMath from "@/core/axiom/math";
 import { CoinSpawnEvent } from "./xPGather";
 
 export default class DamageCalculator extends DogmaSystem {
@@ -35,9 +33,12 @@ export default class DamageCalculator extends DogmaSystem {
 
       const finalDamage = this.calculateDamage(hit, attackerStats, targetStats);
       targetStats.currentHP -= finalDamage;
-      if (attack.tracking.hitType !== "pierce") this.deleteAttack(attack.ID);
-      if (targetStats.currentHP <= targetStats.minHP)
-        toRemove.add(hit.targetID);
+      if (attack.tracking.hitType === "hit") this.deleteAttack(attack.ID);
+      if (targetStats.currentHP <= targetStats.minHP) {
+        if (targetStats.tags.has("secondLife")) this.relocateChar(targetStats);
+        else toRemove.add(hit.targetID);
+        this.healPlayer();
+      }
     });
     toRemove.forEach((ID) => this.deleteEntity(ID));
   }
@@ -84,5 +85,16 @@ export default class DamageCalculator extends DogmaSystem {
       target.maxResist[attack.damageType],
     );
     return Math.max(0, attack.baseDamage * (1 + increase) * (1 - resist));
+  }
+  private relocateChar(stats: SystemComponent<"CharacterStats">) {
+    const transform = this.getComponent(stats.ID, "Transform")!;
+    transform.position.set(1300, 1300); //TODO: losowe miejsce na mapie
+    transform.prevPosition.set(1300, 1300);
+    stats.currentHP = stats.maxHP * 0.5;
+  }
+  private healPlayer() {
+    const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
+    if (stats.currentHP >= stats.maxHP) return;
+    stats.currentHP += 1;
   }
 }

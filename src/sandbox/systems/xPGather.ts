@@ -50,7 +50,7 @@ export default class XPGather extends DogmaSystem {
     this.subscribeToPhase({
       callback: this.updateGatherer.bind(this),
       phase: "update",
-      after: ["DamageCalculator"],
+      after: ["DamageCalculator", "UseItem"],
     });
     this.events.subscribeToDeferred({
       callback: () => this.gatherAllCoinsFromMap(),
@@ -85,6 +85,7 @@ export default class XPGather extends DogmaSystem {
     this.updateXPNodes();
     this.updateGathered();
     if (InputManager.isKeyPressed("g")) this.gatherAllCoinsFromMap();
+    if (InputManager.isKeyPressed("h")) this.spawnXP();
 
     this.timeSinceSweep += Time.getFixedDeltaTime();
     if (this.timeSinceSweep >= SWEEP_INTERVAL) {
@@ -109,12 +110,12 @@ export default class XPGather extends DogmaSystem {
     events.forEach((event) => {
       const coinPos = AxiomMath.randomInCirclePoint(event.deadPos, 50);
       const coin = new XPSmall(coinPos, playerTransform.ID);
-      const coinCrop = items.xp_small;
+      const transform = coin.getComponent("Transform")!;
       const box: Box = {
         x: coinPos.x,
         y: coinPos.y,
-        w: coinCrop.width,
-        h: coinCrop.height,
+        w: transform.size.width,
+        h: transform.size.height,
       };
 
       this.spatialGrid.insert({
@@ -146,7 +147,8 @@ export default class XPGather extends DogmaSystem {
     const events = this.events.getCascade<CoinReachedEvent[]>("coinReached");
     if (!events) return;
     events.forEach(({ ID, value }) => {
-      this.battleProgressData.coins += value;
+      this.battleProgressData.currentLvlXP += value;
+      this.battleProgressData.totalXP += value;
       EntityManager.removeEntity(ID, "battle");
     });
   }
@@ -164,6 +166,7 @@ export default class XPGather extends DogmaSystem {
 
   private sweepHeatmap() {
     const viewBox = AuroraCamera.getViewBox();
+    console.log("sweap");
     const playerTransform = this.getComponentWithMarker("Player", "Transform")!;
 
     for (const [key, count] of this.heatMap) {
@@ -191,17 +194,18 @@ export default class XPGather extends DogmaSystem {
     for (let i = 0; i < bigCount; i++) {
       const pos = AxiomMath.randomInRectPoint(cellBox);
       const big = new XPBig(pos, targetID);
+      const transform = big.getComponent("Transform")!;
+
       this.spatialGrid.insert({
         bounds: {
           x: pos.x,
           y: pos.y,
-          w: items.xp_big.width,
-          h: items.xp_big.height,
+          w: transform.size.width,
+          h: transform.size.height,
         },
         ID: big.ID,
         data: { ID: big.ID, value: CONSOLIDATE_UNIT },
       });
-      console.log(CONSOLIDATE_UNIT);
       EntityManager.spawnEntity(big, "battle");
     }
 
@@ -260,5 +264,28 @@ export default class XPGather extends DogmaSystem {
     return (
       a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
     );
+  }
+  private spawnXP() {
+    Array(20)
+      .fill(null)
+      .forEach(() => {
+        const view = AuroraCamera.getViewBox();
+        const pos = AxiomMath.randomInRectPoint(view);
+        const player = this.getComponentWithMarker("Player", "Transform")!;
+        const xp = new XPSmall(pos, player.ID);
+        EntityManager.spawnEntity(xp, "battle");
+        const transform = xp.getComponent("Transform")!;
+        this.spatialGrid.insert({
+          bounds: {
+            x: pos.x,
+            y: pos.y,
+            w: transform.size.width,
+            h: transform.size.height,
+          },
+          ID: xp.ID,
+          data: { ID: xp.ID, value: 1 },
+        });
+        this.incrementHeat(pos);
+      });
   }
 }

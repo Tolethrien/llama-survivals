@@ -8,10 +8,13 @@ export default class XPSmall extends DogmaEntity {
     this.addTag("Item");
     this.addTag("XP");
     this.addTag("XP_Small");
-
+    const crop = items.xpSmall;
     this.addComponent("Transform", {
       position: pos,
-      size: { height: items.xp_small.height, width: items.xp_small.width },
+      size: {
+        height: crop.height * 1.2,
+        width: crop.width * 1.2,
+      },
     });
     this.addComponent("Magnet", {
       pullStrength: 2,
@@ -20,7 +23,7 @@ export default class XPSmall extends DogmaEntity {
     });
     this.addComponent("Sprite", {
       spriteName: "items",
-      crop: items.xp_small,
+      crop: crop,
       renderMode: "lerpPos",
       layer: RENDER_LAYER.onGround,
     });

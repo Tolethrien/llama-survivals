@@ -1,5 +1,12 @@
 {
-    "xp_small":{"x": 0,"y":0,"width":32,"height":32},
-    "xp_big"  :{"x":32,"y":0,"width":32,"height":32},
-    "chest"   :{"x":64,"y":0,"width":64,"height":64}
+    "xpSmall"     :{"x":  7,"y": 8,"width":17,"height": 17},
+    "xpBig"       :{"x": 35,"y": 3,"width":26,"height": 26},
+    "chest"       :{"x": 83,"y": 9,"width":26,"height": 43},
+    "crystalShard":{"x":136,"y": 8,"width":14,"height": 15},
+    "papyrus"     :{"x":171,"y": 9,"width":44,"height": 45},
+    "talisman"    :{"x":173,"y":75,"width":40,"height": 43},
+    "gem"         :{"x":132,"y":36,"width":24,"height": 24},
+    "orb"         :{"x":133,"y":69,"width":24,"height": 24},
+    "crystal"     :{"x": 13,"y":54,"width":36,"height":105},
+    "crystalPot"  :{"x": 80,"y":80,"width":34,"height": 38}
 }

@@ -1,33 +1,34 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class Skulls extends DogmaEntity {
+export default class BananaSpread extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("Skulls");
+    this.addTag("BananaSpread");
+
     this.addComponent("Ability", {
       attackBehavior: {
-        name: "orbit",
-        orbitSpeed: 50,
-        radius: { x: 400, y: 400 },
-        startAngle: 0,
+        name: "projectile",
+        direction: { name: "angle", deg: 0 },
+        movementSpeed: 400,
       },
       attackMeta: {
-        baseDmg: 15,
-        lifeSpan: 0,
-        attackName: "skull",
-        hitType: "pierce",
+        baseDmg: 10,
+        lifeSpan: 2,
+        attackName: "fireball",
+        hitType: "hit",
         attackRange: "projectile",
         damageType: "physical",
         impactType: "impact",
-        onCasterDeath: "remove",
+        onCasterDeath: "live",
       },
       spawnMode: {
-        type: "persistent",
-        abilityDelay: 0,
+        type: "spawnOnDelay",
+        abilityDelay: 3,
+        count: 6,
         where: "onSelf",
-        count: 2,
-        angleStep: 360 / 2,
+        angleStep: 360 / 6,
+        delay: 0.2,
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

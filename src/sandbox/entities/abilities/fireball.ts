@@ -1,10 +1,10 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class ArrowMachine extends DogmaEntity {
+export default class Fireball extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("ArrowMachine");
+    this.addTag("Fireball");
 
     this.addComponent("Ability", {
       attackBehavior: {
@@ -13,9 +13,9 @@ export default class ArrowMachine extends DogmaEntity {
         movementSpeed: 500,
       },
       attackMeta: {
-        baseDmg: 15,
+        baseDmg: 10,
         lifeSpan: 2,
-        attackName: "arrow",
+        attackName: "fireball",
         hitType: "hit",
         attackRange: "projectile",
         damageType: "physical",
@@ -24,7 +24,7 @@ export default class ArrowMachine extends DogmaEntity {
       },
       spawnMode: {
         type: "spawnAtOnce",
-        abilityDelay: 2,
+        abilityDelay: 1,
         count: 1,
         where: "onSelf",
         angleStep: 0,

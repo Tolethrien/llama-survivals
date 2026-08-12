@@ -8,6 +8,7 @@ import auras from "./assets/auras.png";
 import spells from "./assets/spells.png";
 import items from "./assets/items.png";
 import foliage from "./assets/foliage.png";
+import icons from "./assets/icons.png";
 async function preload() {
   const aurora = auroraConfig({
     userTextures: [
@@ -17,6 +18,7 @@ async function preload() {
       { name: "spells", url: spells },
       { name: "items", url: items },
       { name: "foliage", url: foliage },
+      { name: "icons", url: icons },
     ],
     userFonts: [],
     feature: {

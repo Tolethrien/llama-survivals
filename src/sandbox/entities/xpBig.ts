@@ -8,9 +8,10 @@ export default class XPBig extends DogmaEntity {
     this.addTag("Item");
     this.addTag("XP");
     this.addTag("XP_Big");
+    const crop = items.xpBig;
     this.addComponent("Transform", {
       position: pos,
-      size: { height: items.xp_big.height, width: items.xp_big.width },
+      size: { height: crop.height * 1.2, width: crop.width * 1.2 },
     });
     this.addComponent("Magnet", {
       pullStrength: 2,
@@ -19,7 +20,7 @@ export default class XPBig extends DogmaEntity {
     });
     this.addComponent("Sprite", {
       spriteName: "items",
-      crop: items.xp_big,
+      crop: crop,
       renderMode: "lerpPos",
       layer: RENDER_LAYER.onGround,
     });

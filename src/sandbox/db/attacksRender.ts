@@ -1,5 +1,5 @@
 import { RENDER_LAYER } from "@/sandbox/scenes/battleScene";
-
+import spells from "@sandbox/assets/spells.json";
 export interface AttackEntry {
   tint?: RGBA; // shading of a attack
   texture: string; // name of a texture to use
@@ -15,44 +15,59 @@ export interface AttackEntry {
 export type AttackDisplayKey = keyof typeof AttackShapeList;
 export const AttackShapeList = {
   fireball: {
-    tint: [255, 255, 255, 255],
-    crop: { x: 94, y: 0, width: 94, height: 94 },
-    texture: "auras",
-    layer: "groundAttacks",
-    size: { width: 300, height: 300 },
+    crop: spells.fireball,
+    texture: "spells",
+    layer: "main",
+    size: {
+      width: spells.fireball.width * 1.5,
+      height: spells.fireball.height * 1.5,
+    },
     collider: { shape: "circle" },
   },
 
   skull: {
-    tint: [0, 0, 255, 255],
-    crop: { x: 94, y: 0, width: 94, height: 94 },
-    texture: "auras",
-    layer: "main",
-    size: { width: 40, height: 40 },
+    tint: [255, 100, 100, 255],
+    crop: spells.scull,
+    texture: "spells",
+    layer: "overlay",
+    size: { width: spells.scull.width, height: spells.scull.height },
     collider: { shape: "circle" },
   },
-  arrow: {
-    tint: [255, 255, 255, 255],
-    crop: { x: 0, y: 0, width: 32, height: 32 },
+  firewall: {
+    crop: spells.fireColumn,
     texture: "spells",
     layer: "main",
-    size: { width: 64, height: 64 },
-    collider: {
-      shape: "circle",
-      sizeOffset: { width: -10, height: -10 },
-      posOffset: { x: 0, y: -5 },
-    },
+    size: { width: spells.fireColumn.width, height: spells.fireColumn.height },
+    collider: { shape: "rect" },
   },
-  purpleArrow: {
-    tint: [128, 0, 128, 255],
-    crop: { x: 0, y: 0, width: 32, height: 32 },
+  vortex: {
+    crop: spells.voidVortex,
     texture: "spells",
     layer: "main",
-    size: { width: 64, height: 64 },
-    collider: {
-      shape: "circle",
-      sizeOffset: { width: -10, height: -10 },
-      posOffset: { x: 0, y: -5 },
+    size: {
+      width: spells.voidVortex.width * 1.5,
+      height: spells.voidVortex.height * 1.5,
     },
+    collider: { shape: "rect" },
+  },
+  auraRed: {
+    crop: spells.auraRed,
+    texture: "spells",
+    layer: "groundAttacks",
+    size: {
+      width: spells.voidVortex.width * 5,
+      height: spells.voidVortex.height * 5,
+    },
+    collider: { shape: "circle" },
+  },
+  auraGold: {
+    crop: spells.auraGold,
+    texture: "spells",
+    layer: "groundAttacks",
+    size: {
+      width: spells.voidVortex.width * 5,
+      height: spells.voidVortex.height * 5,
+    },
+    collider: { shape: "circle" },
   },
 } satisfies Record<string, AttackEntry>;

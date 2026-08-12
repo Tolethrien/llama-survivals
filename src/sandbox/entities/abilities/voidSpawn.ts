@@ -1,34 +1,32 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class Spiraler extends DogmaEntity {
+export default class VoidSpawn extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("Spiraler");
-
+    this.addTag("VoidSpawn");
     this.addComponent("Ability", {
       attackBehavior: {
         name: "projectile",
-        movementSpeed: 500,
-        direction: { name: "angle", deg: 0 },
+        direction: { deg: 0, name: "angle" },
+        movementSpeed: 300,
       },
       attackMeta: {
         baseDmg: 15,
-        lifeSpan: 2,
-        attackName: "purpleArrow",
+        lifeSpan: 10,
+        attackName: "vortex",
         hitType: "pierce",
-        attackRange: "projectile",
+        attackRange: "melee",
         damageType: "physical",
         impactType: "impact",
         onCasterDeath: "live",
       },
       spawnMode: {
-        type: "spawnOnDelay",
-        abilityDelay: 1,
+        type: "spawnAtOnce",
+        abilityDelay: 2,
+        count: 2,
         where: "onSelf",
-        count: 16,
-        angleStep: 360 / 16, // 16 × 22.5° = 360° — pełny obrót
-        delay: 0.01, // odstęp między kolejnymi strzałami w serii (dawne burstInterval)
+        angleStep: 360 / 2,
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

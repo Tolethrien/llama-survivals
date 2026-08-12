@@ -13,10 +13,12 @@ export default class LifeCycle extends DogmaSystem {
     });
   }
   private removeEntities() {
-    const dt = Time.getDeltaTime();
+    const sdt = Time.getDeltaTime();
+    const udt = Time.getUnscaledDeltaTime();
     const timers = this.getComponentList("LifeSpan");
     if (!timers) return;
     timers.forEach((life) => {
+      const dt = life.tags.has("timeImmune") ? udt : sdt;
       life.currentLife -= dt;
       if (life.currentLife <= 0) {
         EntityManager.removeEntity(life.ID, "battle");

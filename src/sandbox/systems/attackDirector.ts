@@ -17,7 +17,8 @@ export default class AttackDirector extends DogmaSystem {
   }
 
   private spawn() {
-    const dt = Time.getDeltaTime();
+    const sdt = Time.getDeltaTime();
+    const udt = Time.getUnscaledDeltaTime();
     const perceptionData =
       this.events.getCascade<EnemyPerceptionData[]>("EnemyPerception")?.[0];
     assert(
@@ -29,8 +30,8 @@ export default class AttackDirector extends DogmaSystem {
     const abilities = this.getComponentsGroup(["Ability", "Relation"]);
     abilities?.forEach((ID) => {
       const ability = this.getComponent(ID, "Ability")!;
+      const dt = ability.tags.has("timeImmune") ? udt : sdt;
       const relation = this.getComponent(ID, "Relation")!;
-
       if (ability.burstRemaining > 0) {
         this.tickBurst(ability, relation, dt);
         return;
@@ -58,6 +59,14 @@ export default class AttackDirector extends DogmaSystem {
     relation: SystemComponent<"Relation">,
   ) {
     if (ability.spawnMode.type === "spawnOnDelay") {
+      const casterTransform = this.getComponent(
+        relation.parentChar!,
+        "Transform",
+      )!;
+      ability.burstFaceDir = {
+        x: casterTransform.faceDir.x,
+        y: casterTransform.faceDir.y,
+      };
       ability.burstRemaining = ability.spawnMode.count;
       ability.burstIndex = 0;
       ability.burstTimer = 0;
@@ -80,6 +89,7 @@ export default class AttackDirector extends DogmaSystem {
     ability.burstIndex += 1;
     ability.burstRemaining -= 1;
     ability.burstTimer = ability.spawnMode.delay;
+    if (ability.burstRemaining <= 0) ability.burstFaceDir = undefined;
   }
 
   private generateAbilityAttack(
@@ -94,10 +104,19 @@ export default class AttackDirector extends DogmaSystem {
     const casterCollider = this.getComponent(relation.parentChar!, "Collider")!;
     const playerTransform = this.getComponentWithMarker("Player", "Transform")!;
     const playerCollider = this.getComponentWithMarker("Player", "Collider")!;
+
+    const aimTransform = ability.burstFaceDir
+      ? ({
+          ...casterTransform,
+          faceDir: ability.burstFaceDir,
+          tags: casterTransform.tags,
+        } as SystemComponent<"Transform">)
+      : casterTransform;
+
     const attack = AttackManager.build(
       ability,
       relation,
-      casterTransform,
+      aimTransform,
       casterCollider,
       playerTransform,
       playerCollider,

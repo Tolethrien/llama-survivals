@@ -5,28 +5,35 @@ import Archer from "../entities/enemies/archer";
 import AuroraCamera from "@/core/aurora/camera";
 import AxiomMath from "@/core/axiom/math";
 import Ork from "../entities/enemies/ork";
-import Dogma from "@/core/dogma/dogma";
-//spawner musi cala fale spawnowac naraz
-//spawner musi miec jakis rodzaj delayu miedzy spawnami
-//spawner musi miec build fali czyli ile i czego i gdzie i jak
+import Draw from "@/core/aurora/draw";
+import Aurora from "@/core/aurora/core";
+
 type ViewSide = "top" | "right" | "bottom" | "left";
 export type BattleProgressData = {
-  coins: number;
+  currentLvlXP: number;
   lvl: number;
-  nextLvlCoin: number;
+  nextLvlXP: number;
   nextLvlMultiplier: number;
+  totalXP: number;
 };
 export type LvlUpEvent = {
   lvls: number;
 };
 const LVL_MULTI = 10;
 const ENEMY_MULTI = 10;
+const BASE_SPAWN_DELAY = 1; // na starcie: ~1 spawn / sekundę
+const MIN_SPAWN_DELAY = 0.1; // najszybsze możliwe tempo
+const SPAWN_RATE_CURVE = 0.005; // o ile spawnDelay maleje na sekundę przeżycia
+
+const BASE_CAP = 20;
+const CAP_GROWTH_PER_MIN = 15; // ile capu przybywa na minutę przeżycia
 export default class Spawner extends DogmaSystem {
   private spawnDelay: number = 0.1; //s
   private currentTime: number = 0;
   private lvlCheckInterval: number = 1; // s
   private lvlCheckTimer: number = 0;
   private pendingLevelUps: number = 0;
+  private elapsedTime = 0;
   declare private battleProgressData: BattleProgressData;
   constructor(internal: InternalDSProps) {
     super(internal);
@@ -36,12 +43,18 @@ export default class Spawner extends DogmaSystem {
       phase: "update",
       callback: this.spawnerUpdater.bind(this),
     });
+    this.subscribeToPhase({
+      phase: "render",
+      callback: this.renderUI.bind(this),
+    });
     this.battleProgressData = {
-      coins: 0,
+      currentLvlXP: 0,
       lvl: 1,
-      nextLvlCoin: LVL_MULTI,
+      nextLvlXP: LVL_MULTI,
       nextLvlMultiplier: LVL_MULTI,
+      totalXP: 0,
     };
+
     this.setSharedData<BattleProgressData>(
       "scene",
       "battleProgressData",
@@ -49,27 +62,37 @@ export default class Spawner extends DogmaSystem {
     );
   }
   private spawnerUpdater() {
-    this.tickLvlCheck();
-    this.spawn();
-  }
-  private spawn() {
     const dt = Time.getDeltaTime();
+    this.elapsedTime += dt;
+    this.tickLvlCheck(dt);
+    this.spawn(dt);
+  }
+  private spawn(dt: number) {
     this.currentTime -= dt;
     if (this.currentTime <= 0) {
       this.spawnWave();
-      this.currentTime = this.spawnDelay;
+      this.currentTime = this.getCurrentSpawnDelay();
     }
   }
   private spawnWave() {
     const enemies = this.getComponentsWithTags("Transform", ["enemy"]);
-    if (enemies.size >= this.battleProgressData.lvl * ENEMY_MULTI) return;
+    if (enemies.size >= this.getCurrentCap()) return;
     const pos = this.getRandomOutsideViewPosition();
-    const isArch = AxiomMath.randomBool();
-    let mob: Ork | Archer | undefined = undefined;
-    if (isArch) {
-      mob = new Ork({ position: pos });
-    } else mob = new Archer({ position: pos });
+    const isOrk = AxiomMath.randomBool(0.8);
+    const mob = isOrk
+      ? new Ork({ position: pos })
+      : new Archer({ position: pos });
     EntityManager.spawnEntity(mob, "battle");
+  }
+  private getCurrentCap(): number {
+    const minutes = this.elapsedTime / 60;
+    return BASE_CAP + CAP_GROWTH_PER_MIN * minutes;
+  }
+  private getCurrentSpawnDelay(): number {
+    return Math.max(
+      MIN_SPAWN_DELAY,
+      BASE_SPAWN_DELAY - SPAWN_RATE_CURVE * this.elapsedTime,
+    );
   }
   private getRandomOutsideViewPosition(
     side?: ViewSide,
@@ -101,10 +124,9 @@ export default class Spawner extends DogmaSystem {
         };
     }
   }
-  private tickLvlCheck() {
+  private tickLvlCheck(dt: number) {
     const gained = this.validateLvl();
     this.pendingLevelUps += gained;
-    const dt = Time.getDeltaTime();
     this.lvlCheckTimer -= dt;
     if (this.lvlCheckTimer <= 0) {
       if (this.pendingLevelUps > 0) {
@@ -121,11 +143,11 @@ export default class Spawner extends DogmaSystem {
     return sides[AxiomMath.randomInt(0, 3)];
   }
   private validateLvl() {
-    const { coins, lvl, nextLvlMultiplier } = this.battleProgressData;
+    const { currentLvlXP, lvl, nextLvlMultiplier } = this.battleProgressData;
 
     const a = nextLvlMultiplier / 2;
     const b = nextLvlMultiplier * (lvl - 0.5);
-    const c = -coins;
+    const c = -currentLvlXP;
     const discriminant = b * b - 4 * a * c;
     if (discriminant < 0) return 0;
 
@@ -133,9 +155,123 @@ export default class Spawner extends DogmaSystem {
     if (k <= 0) return 0;
     const cost = nextLvlMultiplier * (k * lvl + (k * (k - 1)) / 2);
     this.battleProgressData.lvl += k;
-    this.battleProgressData.coins -= cost;
-    this.battleProgressData.nextLvlCoin =
+    this.battleProgressData.currentLvlXP -= cost;
+    this.battleProgressData.nextLvlXP =
       this.battleProgressData.nextLvlMultiplier * this.battleProgressData.lvl;
     return k;
+  }
+  private formatTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
+  private renderUI() {
+    this.renderInterface();
+  }
+  private renderInterface() {
+    const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
+    const hp = AxiomMath.map(stats.currentHP, 0, stats.maxHP, 0, 50);
+    //TODO: przeniesc bo to to nie ma senus tutaj
+    Draw.guiRect({
+      position: {
+        x: Aurora.canvas.width / 2 - 25 - 2,
+        y: Aurora.canvas.height / 2 - 30 - 2,
+      },
+      size: { width: 50 + 4, height: 4 + 4 },
+      tint: [0, 0, 0, 170],
+    });
+    Draw.guiRect({
+      position: {
+        x: Aurora.canvas.width / 2 - 25,
+        y: Aurora.canvas.height / 2 - 30,
+      },
+      size: { width: hp, height: 4 },
+      tint: [255, 0, 0, 150],
+    });
+
+    // --- pionowy pasek XP/coins, teraz po prawej stronie ---
+    const barWidth = 20;
+    const barHeight = Aurora.canvas.height - 40;
+    const barX = Aurora.canvas.width - 20 - barWidth;
+    const barY = 20;
+
+    Draw.guiRect({
+      position: { x: barX, y: barY },
+      size: { width: barWidth, height: barHeight },
+      tint: [0, 0, 0, 255],
+    });
+
+    const innerX = barX + 5;
+    const innerY = barY + 5;
+    const innerWidth = barWidth - 10;
+    const innerHeight = barHeight - 10;
+
+    Draw.guiRect({
+      position: { x: innerX, y: innerY },
+      size: { width: innerWidth, height: innerHeight },
+      tint: [150, 0, 0, 255],
+    });
+
+    const val = AxiomMath.map(
+      this.battleProgressData.currentLvlXP,
+      0,
+      this.battleProgressData.nextLvlXP,
+      0,
+      innerHeight,
+      true,
+    );
+    Draw.guiRect({
+      position: { x: innerX, y: innerY + innerHeight - val },
+      size: { width: innerWidth, height: val },
+      tint: [105, 0, 0, 255],
+    });
+
+    // --- boks ze statami, lewy dolny róg ---
+    // --- boks ze statami, prawy dolny róg, obok paska ---
+    const boxWidth = 90;
+    const boxHeight = 90; // +20 na nową linię
+    const boxX = barX - boxWidth - 2; // 10px odstępu od paska
+    const boxY = Aurora.canvas.height - boxHeight - 20;
+
+    Draw.guiRect({
+      position: { x: boxX, y: boxY },
+      size: { width: boxWidth, height: boxHeight },
+      tint: [0, 0, 0, 200],
+    });
+    Draw.guiText({
+      font: "lato",
+      fontSize: { mode: "pixel", size: 12 },
+      position: { mode: "pixel", x: boxX + 8, y: boxY + 6 },
+      text: `Lvl ${this.battleProgressData.lvl}`,
+      fontColor: [255, 255, 255, 255],
+    });
+    Draw.guiText({
+      font: "lato",
+      fontSize: { mode: "pixel", size: 12 },
+      position: { mode: "pixel", x: boxX + 8, y: boxY + 26 },
+      text: `Gold: ${`100`}`,
+      fontColor: [255, 255, 255, 255],
+    });
+    Draw.guiText({
+      font: "lato",
+      fontSize: { mode: "pixel", size: 12 },
+      position: { mode: "pixel", x: boxX + 8, y: boxY + 46 },
+      text: `total XP: ${this.battleProgressData.totalXP}`,
+      fontColor: [255, 255, 255, 255],
+    });
+    Draw.guiText({
+      font: "lato",
+      fontSize: { mode: "pixel", size: 9 },
+      position: { mode: "pixel", x: boxX + 8, y: boxY + 66 },
+      text: `${this.battleProgressData.currentLvlXP}/${this.battleProgressData.nextLvlXP}`,
+      fontColor: [200, 200, 200, 255],
+    });
+    Draw.guiText({
+      font: "lato",
+      fontSize: { mode: "pixel", size: 20 },
+      position: { mode: "pixel", x: Aurora.canvas.width - 125, y: 10 },
+      text: this.formatTime(this.elapsedTime),
+      fontColor: [255, 255, 255, 255],
+    });
   }
 }

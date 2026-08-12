@@ -10,7 +10,6 @@ import AISwarm from "./systems/AISwarm";
 import GameInputs from "./systems/gameInput";
 import Physics from "./systems/physics";
 import RenderGame from "./systems/renderGame";
-import RenderUI from "./systems/renderUI";
 import LifeSpan from "./components/lifespan";
 import LifeCycle from "./systems/LifeCycle";
 import CharacterStats from "./components/characterStats";
@@ -22,16 +21,14 @@ import AttackDirector from "./systems/attackDirector";
 import Ability from "./components/ability";
 import Attack from "./components/attack";
 import Aura from "./entities/abilities/aura";
-import ArrowMachine from "./entities/abilities/arrowMachine";
+import Fireball from "./entities/abilities/fireball";
 import Stick from "./components/stick";
 import Orbit from "./components/orbit";
 import Fraction from "./components/fraction";
 import Skulls from "./entities/abilities/skulls";
-import WorldDir from "./entities/abilities/worldDir";
 import Spawner from "./systems/spawner";
 import Slash from "./entities/abilities/slash";
 import Projectile from "./components/projectile";
-import Spiraler from "./entities/abilities/spiraler";
 import Magnet from "./components/magnet";
 import XpGather from "./systems/xPGather";
 import UINode from "./components/UINode";
@@ -41,14 +38,20 @@ import ChestGather from "./systems/chestGather";
 import UseItem from "./systems/useItem";
 import BuffList from "./components/buff";
 import { Buffs } from "./systems/buffs";
+import ChestRoll from "./components/chestRoll";
+import ItemSwap from "./systems/itemSwap";
+import FireWall from "./entities/abilities/firewall";
+import VoidSpawn from "./entities/abilities/voidSpawn";
+import BananaSpread from "./entities/abilities/bananaSpread";
 
 export const abilities = {
   Aura,
-  ArrowMachine,
+  Fireball,
   Skulls,
-  WorldDir,
   Slash,
-  Spiraler,
+  FireWall,
+  VoidSpawn,
+  BananaSpread,
 };
 
 export const dogmaConfig = {
@@ -56,7 +59,6 @@ export const dogmaConfig = {
     GameInputs,
     Physics,
     RenderGame,
-    RenderUI,
     AIPerception,
     AISwarm,
     Collision,
@@ -70,6 +72,7 @@ export const dogmaConfig = {
     ChestGather,
     UseItem,
     Buffs,
+    ItemSwap,
   },
   components: {
     Rigid,
@@ -92,5 +95,6 @@ export const dogmaConfig = {
     Magnet,
     UINode,
     BuffList,
+    ChestRoll,
   },
 } satisfies DogmaConfig;

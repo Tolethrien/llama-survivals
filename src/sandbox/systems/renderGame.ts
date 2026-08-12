@@ -93,9 +93,8 @@ export default class RenderGame extends DogmaSystem {
   }
 
   private resolveOrbitRenderPos(ID: Symbol, alpha: number): Position2D | null {
-    const orbit = this.getComponent(ID, "Orbit");
-    const transform = this.getComponent(ID, "Transform");
-    if (!orbit || !transform) return null;
+    const transform = this.getComponent(ID, "Transform")!;
+    const orbit = this.getComponent(ID, "Orbit")!;
     const targetTransform = this.getComponent(orbit.targetID, "Transform");
     if (!targetTransform) return null;
 

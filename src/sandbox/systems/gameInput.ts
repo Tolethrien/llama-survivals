@@ -22,6 +22,14 @@ export enum ItemUseKey {
 const ITEM_USE_KEYS = Object.keys(ItemUseKey).filter((k) =>
   Number.isNaN(Number(k)),
 ) as (keyof typeof ItemUseKey)[];
+const ITEM_ACTIONS: Record<keyof typeof ItemUseKey, string> = {
+  z: "useItemZ",
+  x: "useItemX",
+  c: "useItemC",
+  v: "useItemV",
+};
+const HOLD_REQUIRED = 2;
+
 export default class GameInputs extends DogmaSystem {
   private axis = Vec2.Zero;
   declare private playerRigid: SystemComponent<"Rigid">;
@@ -30,6 +38,7 @@ export default class GameInputs extends DogmaSystem {
   private holdTimer = 2;
   private isHolding: keyof typeof ItemUseKey | undefined = undefined;
   private triggered = false;
+  private lastProgress = 0;
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
   }
@@ -39,7 +48,15 @@ export default class GameInputs extends DogmaSystem {
       callback: this.update.bind(this),
       before: ["Physics"],
     });
-
+    //TODO: zrob jakies centralne miejsce  dla akcji a nie po systemach
+    ITEM_USE_KEYS.forEach((key) => {
+      InputManager.bindAction({
+        name: ITEM_ACTIONS[key],
+        key,
+        mods: "NoMod",
+        holdDuration: HOLD_REQUIRED,
+      });
+    });
     const rigid = this.getComponentWithMarker("Player", "Rigid");
     const transform = this.getComponentWithMarker("Player", "Transform");
     assert(
@@ -77,32 +94,35 @@ export default class GameInputs extends DogmaSystem {
   private useItemInputs() {
     if (this.isHolding === undefined) {
       const pressedKey = ITEM_USE_KEYS.find((k) =>
-        InputManager.isKeyPressed(k),
+        InputManager.onActionPressed(ITEM_ACTIONS[k]),
       );
       if (!pressedKey) return;
       this.isHolding = pressedKey;
-      this.holdTimer = this.holdRequired;
       this.triggered = false;
+      this.lastProgress = 0;
     }
+
     const key = this.isHolding!;
-    if (!InputManager.isKeyHold(key)) {
+    const progress = InputManager.getActionHoldProgress(ITEM_ACTIONS[key]);
+
+    if (progress === undefined) {
       if (!this.triggered) {
         this.events.emitCascade<ItemHoldEvent>("itemHoldEvent", {
           key,
-          progress: 1 - Math.max(this.holdTimer, 0) / this.holdRequired,
+          progress: this.lastProgress,
           state: "broken",
         });
       }
       this.isHolding = undefined;
-      this.holdTimer = this.holdRequired;
       this.triggered = false;
+      this.lastProgress = 0;
       return;
     }
 
+    this.lastProgress = progress;
     if (this.triggered) return;
-    this.holdTimer -= Time.getDeltaTime();
-    const progress = 1 - Math.max(this.holdTimer, 0) / this.holdRequired;
-    if (this.holdTimer <= 0) {
+
+    if (progress >= 1) {
       this.triggered = true;
       this.events.emitCascade<ItemHoldEvent>("itemHoldEvent", {
         key,

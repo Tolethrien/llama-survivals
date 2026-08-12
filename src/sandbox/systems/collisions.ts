@@ -56,7 +56,9 @@ export default class Collision extends DogmaSystem {
       if (!collider.active) return;
       const attack = this.getComponent(attackID, "Attack")!;
       const transform = this.getComponent(attackID, "Transform")!;
-      const dt = Time.getFixedDeltaTime();
+      const sdt = Time.getDeltaTime();
+      const udt = Time.getUnscaledDeltaTime();
+      const dt = attack.tags.has("timeImmune") ? udt : sdt;
       this.calculateDT(attack, dt);
       const relation = this.getComponent(attack.ID, "Relation")!;
       const parentID = relation.parentChar!;

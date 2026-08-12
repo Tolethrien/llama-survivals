@@ -1,4 +1,5 @@
 import Vec2 from "../axiom/vec2";
+import Time from "./time";
 
 interface MouseEvents {
   mousePos: Position2D;
@@ -19,6 +20,7 @@ const MODS = ["Shift", "Alt", "Control"] as const;
 type Action = {
   name: string;
   mods: (typeof MODS)[number][] | "NoMod";
+  holdDuration?: number;
 } & (
   | { key: string; mouse?: never }
   | { mouse: keyof typeof MouseKey; key?: never }
@@ -34,6 +36,7 @@ export default class InputManager {
   private static keyInputBuffer = new Set<string>();
   private static mouseDir: Vec2 = Vec2.Zero;
   private static actionMap: Map<string, Action> = new Map();
+  private static keyHoldTime = new Map<string, number>();
   public static registerEvents(canvas: HTMLCanvasElement) {
     canvas.addEventListener("mousedown", (e) => this.mouseEvents(e, "down"));
     canvas.addEventListener("mouseup", (e) => this.mouseEvents(e, "up"));
@@ -57,6 +60,13 @@ export default class InputManager {
       mousePos: { ...this.mouseInputBuffer.mousePos },
       wheel: this.mouseInputBuffer.wheel,
     };
+    const dt = Time.getUnscaledDeltaTime();
+    for (const key of this.keyCurrentFrame) {
+      this.keyHoldTime.set(key, (this.keyHoldTime.get(key) ?? 0) + dt);
+    }
+    for (const key of [...this.keyHoldTime.keys()]) {
+      if (!this.keyCurrentFrame.has(key)) this.keyHoldTime.delete(key);
+    }
     this.mouseInputBuffer.wheel = 0;
     const centerX = this.canvas.width * 0.5;
     const centerY = this.canvas.height * 0.5;
@@ -158,6 +168,16 @@ export default class InputManager {
     return this.checkActionModsPressed(action);
   }
 
+  public static getActionHoldProgress(name: string): number | undefined {
+    const action = this.actionMap.get(name);
+    if (!action?.holdDuration || !action.key) return undefined;
+    if (!this.checkActionModsPressed(action)) return undefined;
+
+    const duration = this.getKeyHoldDuration(action.key);
+    if (duration === 0) return undefined;
+    return Math.min(duration / action.holdDuration, 1);
+  }
+
   //helpers
   private static mouseEvents(e: MouseEvent, type: "up" | "down") {
     if (type === "down") this.mouseInputBuffer.buttons.add(e.button);
@@ -185,5 +205,8 @@ export default class InputManager {
     const anyModPressed = MODS.some((mod) => this.keyPreviousFrame.has(mod));
     if (action.mods === "NoMod") return !anyModPressed;
     return action.mods.every((mod) => this.keyPreviousFrame.has(mod));
+  }
+  private static getKeyHoldDuration(char: string): number {
+    return this.keyHoldTime.get(char) ?? 0;
   }
 }

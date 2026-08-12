@@ -16,6 +16,7 @@ interface AttackProps {
   transform: {
     position: Position2D;
     velocity: Position2D;
+    sizeMultiplier: number;
   };
   attackBehavior: AttackBehavior;
 }

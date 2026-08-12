@@ -28,12 +28,19 @@ export default class Time {
 
   public static getUnscaledDeltaTime() {
     if (this.paused) return 0;
-    return this.deltaTime; // real dt, ignoruje timeSpeed, ale respektuje pauzę
+    return this.deltaTime;
+  }
+  public static getUIDeltaTime() {
+    return this.deltaTime;
   }
 
   public static getFixedDeltaTime() {
     if (this.paused) return 0;
     return this.FIXED_DT_S * this.timeSpeed;
+  }
+  public static getUnscaledFixedDeltaTime() {
+    if (this.paused) return 0;
+    return this.FIXED_DT_S;
   }
   public static setPaused(paused: boolean) {
     this.paused = paused;

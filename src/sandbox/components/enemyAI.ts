@@ -1,12 +1,12 @@
 import DogmaComponent, { InternalDCProps } from "@/core/dogma/component";
-import { AttackRange } from "../managers/attackManager";
+import { AttackMeta } from "../managers/attackManager";
 
 interface EnemyAIProps {
   pushForce?: number;
   personalSpace?: number;
   attackRange: number;
   flankRange: number;
-  attackRangeType: AttackRange;
+  attackRangeType: AttackMeta["attackRange"];
 }
 export type EnemyState = "swarm" | "combat";
 export default class EnemyAI extends DogmaComponent {
@@ -15,7 +15,7 @@ export default class EnemyAI extends DogmaComponent {
   public state: EnemyState;
   public attackRange: number;
   public flankRange: number;
-  public attackRangeType: AttackRange;
+  public attackRangeType: AttackMeta["attackRange"];
   constructor(internalProps: InternalDCProps, props?: EnemyAIProps) {
     super(internalProps);
     this.pushForce = props?.pushForce ?? 1.5;

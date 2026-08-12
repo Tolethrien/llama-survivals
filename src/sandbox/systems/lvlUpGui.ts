@@ -37,7 +37,6 @@ export default class LvlUpGui extends DogmaSystem {
     this.subscribeToPhase({
       callback: this.render.bind(this),
       phase: "render",
-      after: ["RenderUI"],
     });
     this.subscribeToPhase({
       callback: this.update.bind(this),
@@ -169,8 +168,8 @@ export default class LvlUpGui extends DogmaSystem {
   private rollChoices() {
     const state = this.buildPlayerUpgradeState();
 
-    const eligible = Object.entries(UPGRADE_POOL).filter(([, def]) =>
-      this.isUpgradeEligible(def, state),
+    const eligible = Object.entries(UPGRADE_POOL).filter(([key, def]) =>
+      this.isUpgradeEligible(key, def, state),
     );
     this.currentChoices = AxiomMath.pickRandomN(eligible, 3);
 
@@ -184,7 +183,7 @@ export default class LvlUpGui extends DogmaSystem {
   private applyChoice(index: number) {
     const choice = this.currentChoices[index];
     if (!choice) return;
-    const [, def] = choice;
+    const [key, def] = choice;
     const equipment = this.getComponent(this.playerID, "Equipment")!;
 
     switch (def.kind) {
@@ -197,11 +196,14 @@ export default class LvlUpGui extends DogmaSystem {
         const relation = this.getComponent(slot.abilityID, "Relation")!;
 
         def.apply(ability);
+        if (def.once) ability.appliedUpgrades.add(key);
         this.respawnIfPersistent(ability, relation);
         break;
       }
       case "newAbility": {
         const entity = new abilities[def.abilityTag](this.playerID);
+        const playerTransform = this.getComponent(this.playerID, "Transform")!;
+        if (playerTransform.tags.has("timeImmune")) entity.addTag("timeImmune");
         EntityManager.spawnEntity(entity, "battle");
         equipment.slots.push({
           attackName: def.abilityTag,
@@ -217,6 +219,7 @@ export default class LvlUpGui extends DogmaSystem {
     }
   }
   private isUpgradeEligible(
+    key: string,
     def: UpgradeDefinition,
     state: PlayerUpgradeState,
   ): boolean {
@@ -224,7 +227,10 @@ export default class LvlUpGui extends DogmaSystem {
       case "abilityUpgrade": {
         if (!state.ownedTags.has(def.abilityTag)) return false;
         const ability = state.getAbility(def.abilityTag);
-        if (def.isMaxed && ability && def.isMaxed(ability)) return false;
+        if (!ability) return false;
+        if (def.once && ability.appliedUpgrades.has(key)) return false;
+        if (def.isMin && !def.isMin(ability)) return false;
+        if (def.isMaxed && def.isMaxed(ability)) return false;
         return true;
       }
       case "newAbility":

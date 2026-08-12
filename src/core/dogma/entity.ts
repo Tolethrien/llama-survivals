@@ -1,6 +1,7 @@
 import { dogmaConfig } from "@sandbox/configs";
 import DogmaComponent, { InternalDCProps } from "@dogma/component";
 import { assert, createUUID } from "@/utils/utils";
+import { SystemComponent } from "./system";
 
 export default abstract class DogmaEntity {
   declare public readonly ID: Symbol;
@@ -34,8 +35,8 @@ export default abstract class DogmaEntity {
   public getComponents() {
     return this.components;
   }
-  public getComponent(key: ComponentRegistryKeys) {
-    return this.components.get(key);
+  public getComponent<T extends ComponentRegistryKeys>(key: T) {
+    return this.components.get(key) as SystemComponent<T> | undefined;
   }
   public addTag(tag: string) {
     this.tags.add(tag);

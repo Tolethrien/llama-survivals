@@ -6,7 +6,6 @@ import { CoinReachedEvent, CONSOLIDATE_UNIT } from "./xPGather";
 import InputManager from "@/core/engine/inputManager";
 
 //DO NOT USE 2 TYPES OF MOVEMENT AT ONES IN ENTITY!
-let stop = 1;
 export default class Physics extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
     super(internalProps);
@@ -19,26 +18,26 @@ export default class Physics extends DogmaSystem {
   }
   private physSystem() {
     if (InputManager.isKeyPressed("p")) {
-      if (stop === 0) stop = 1;
-      else stop = 0;
-      Time.setTimeSpeed(stop);
+      Time.setPaused(!Time.getPaused());
     }
-    let dt = Time.getFixedDeltaTime();
-    this.updateRigidMovements(dt);
-    this.updateProjectileMovements(dt);
-    this.updateOrbitalMovement(dt);
+    let sdt = Time.getFixedDeltaTime();
+    let udt = Time.getUnscaledFixedDeltaTime();
+    this.updateRigidMovements(sdt, udt);
+    this.updateProjectileMovements(sdt, udt);
+    this.updateOrbitalMovement(sdt, udt);
     this.updateStickMovement();
-    this.updateMagnetMovement(dt);
+    this.updateMagnetMovement(sdt, udt);
     // this.updateReboundMovement(dt);
     // this.updatePtoPMovement(dt);
   }
-  private updateRigidMovements(dt: number) {
+  private updateRigidMovements(sdt: number, udt: number) {
     // mobs movement
     const components = this.getComponentsGroup(["Rigid", "Transform"]);
     components.forEach((ID) => {
       const rigid = this.getComponent(ID, "Rigid");
       const transform = this.getComponent(ID, "Transform");
       if (!rigid || !transform) return;
+      const dt = transform.tags.has("timeImmune") ? udt : sdt;
       transform.prevPosition.copy(transform.position);
       transform.position.add(rigid.velocity.clone().scale(dt));
 
@@ -47,17 +46,18 @@ export default class Physics extends DogmaSystem {
       if (Math.abs(rigid.velocity.y) < 0.1) rigid.velocity.setAxis("y", 0);
     });
   }
-  private updateProjectileMovements(dt: number) {
+  private updateProjectileMovements(sdt: number, udt: number) {
     const components = this.getComponentsGroup(["Projectile", "Transform"]);
     components.forEach((ID) => {
       const rigid = this.getComponent(ID, "Rigid");
       const transform = this.getComponent(ID, "Transform");
       if (!rigid || !transform) return;
+      const dt = transform.tags.has("timeImmune") ? udt : sdt;
       transform.prevPosition.copy(transform.position);
       transform.position.add(rigid.velocity.clone().scale(dt));
     });
   }
-  private updateOrbitalMovement(dt: number) {
+  private updateOrbitalMovement(sdt: number, udt: number) {
     const components = this.getComponentsGroup(["Orbit", "Transform"]);
     components.forEach((ID) => {
       const orbit = this.getComponent(ID, "Orbit");
@@ -66,6 +66,7 @@ export default class Physics extends DogmaSystem {
 
       const targetTransform = this.getComponent(orbit.targetID, "Transform");
       if (!targetTransform) return;
+      const dt = transform.tags.has("timeImmune") ? udt : sdt;
 
       orbit.prevAngle = orbit.angleDeg;
       orbit.angleDeg = (orbit.angleDeg + orbit.orbitSpeed * dt + 360) % 360;
@@ -101,7 +102,7 @@ export default class Physics extends DogmaSystem {
       transform.position.set(pos.x, pos.y);
     });
   }
-  private updateMagnetMovement(dt: number) {
+  private updateMagnetMovement(sdt: number, udt: number) {
     const components = this.getComponentList("Magnet");
     if (!components) return;
     components.forEach((magnet) => {
@@ -134,6 +135,7 @@ export default class Physics extends DogmaSystem {
       }
       const desiredVelocity =
         distSq > 1 ? toTarget.normalize().scale(magnet.speed) : Vec2.Zero;
+      const dt = transform.tags.has("timeImmune") ? udt : sdt;
 
       magnet.velocity.lerp(desiredVelocity, magnet.pullStrength * dt);
       transform.prevPosition.copy(transform.position);

@@ -15,7 +15,7 @@ export default class Ork extends DogmaEntity {
     this.addComponent("Rigid", { speed: 350 });
     this.addComponent("Fraction", { team: "enemy" });
     this.addComponent("CharacterStats", {
-      maxHP: 100,
+      maxHP: 25,
       minHP: 0,
       damageIncrease: 0,
       DamageTypeIncrease: {

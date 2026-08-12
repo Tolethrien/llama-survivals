@@ -8,16 +8,17 @@ export default class Player extends DogmaEntity {
     const pos: Position2D = { x: 1300, y: 1300 };
     this.setMarker("Player");
     this.addTag("Player");
-    this.addTag("invincible");
+    // this.addTag("invincible");
+    this.addTag("timeImmune");
     this.addComponent("Transform", {
       position: pos,
       size: { height: MobCrops.ork.height, width: MobCrops.ork.width },
     });
     this.addComponent("Fraction", { team: "player" });
     this.addComponent("CharacterStats", {
-      maxHP: 100,
+      maxHP: 150,
       minHP: 0,
-      damageIncrease: 10,
+      damageIncrease: 0,
       DamageTypeIncrease: {
         cold: 0,
         energy: 0,
@@ -40,11 +41,11 @@ export default class Player extends DogmaEntity {
     });
     this.addComponent("BuffList");
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine", "Skulls"],
+      slots: ["Fireball"],
       abilitiesCap: 4,
       items: [
-        { amount: 1, item: "timeSlow" },
-        { amount: 1, item: "gatherCoins" },
+        { amount: 0, item: undefined },
+        { amount: 0, item: undefined },
         { amount: 0, item: undefined },
         { amount: 0, item: undefined },
       ],

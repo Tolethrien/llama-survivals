@@ -40,8 +40,8 @@ export default class BattleScene {
     main.addSystem("ChestGather");
     main.addSystem("Buffs");
     main.addSystem("LvlUpGui");
+    main.addSystem("ItemSwap");
     main.addSystem("RenderGame");
-    main.addSystem("RenderUI");
 
     const player = new Player();
     EntityManager.spawnEntity(player, "battle");

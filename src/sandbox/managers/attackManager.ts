@@ -66,6 +66,10 @@ export default class AttackManager {
     spreadIndex: number,
   ) {
     const displayData = AttackShapeList[ability.attackMeta.attackName];
+    const scaledSize: Size2D = {
+      width: displayData.size.width * ability.sizeMultiplier,
+      height: displayData.size.height * ability.sizeMultiplier,
+    };
     const angleOffsetDeg = this.getAngleOffset(ability.spawnMode, spreadIndex);
 
     const { behavior: attackBehavior, velocity } = this.resolveBehavior(
@@ -79,9 +83,9 @@ export default class AttackManager {
         ? getStickPosition(
             attackBehavior.angle,
             attackBehavior.distance,
-            displayData.layer === "groundAttacks" ? "feet" : "center",
+            displayData.layer === "main" ? "center" : "feet",
             casterTransform,
-            displayData.size,
+            scaledSize,
           )
         : this.getSpawnPoint(
             ability,
@@ -89,7 +93,7 @@ export default class AttackManager {
             casterCollider,
             targetTransform,
             targetCollider,
-            displayData.size,
+            scaledSize,
           );
     const builder = new BaseAttack({
       abilityID: ability.ID,
@@ -97,8 +101,13 @@ export default class AttackManager {
       attackMeta: ability.attackMeta,
       attackBehavior,
       spawn: ability.spawnMode,
-      transform: { position: pos, velocity },
+      transform: {
+        position: pos,
+        velocity,
+        sizeMultiplier: ability.sizeMultiplier,
+      },
     });
+    if (casterTransform.tags.has("timeImmune")) builder.addTag("timeImmune");
     return builder;
   }
 

@@ -14,7 +14,8 @@ export default class Chest extends DogmaEntity {
     });
     this.addComponent("Transform", {
       position: pos,
-      size: { width: 128, height: 128 },
+      size: { width: crop.width * 2, height: crop.height * 2 },
     });
+    this.addComponent("ChestRoll");
   }
 }

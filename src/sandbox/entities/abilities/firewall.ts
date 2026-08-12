@@ -1,33 +1,31 @@
 import DogmaEntity from "@/core/dogma/entity";
 
-export default class Skulls extends DogmaEntity {
+export default class FireWall extends DogmaEntity {
   constructor(parentID: Symbol) {
     super();
     this.addTag("ability");
-    this.addTag("Skulls");
+    this.addTag("Firewall");
+
     this.addComponent("Ability", {
       attackBehavior: {
-        name: "orbit",
-        orbitSpeed: 50,
-        radius: { x: 400, y: 400 },
-        startAngle: 0,
+        name: "static",
       },
       attackMeta: {
         baseDmg: 15,
-        lifeSpan: 0,
-        attackName: "skull",
+        lifeSpan: 10,
+        attackName: "firewall",
         hitType: "pierce",
-        attackRange: "projectile",
+        attackRange: "melee",
         damageType: "physical",
         impactType: "impact",
-        onCasterDeath: "remove",
+        onCasterDeath: "live",
       },
       spawnMode: {
-        type: "persistent",
-        abilityDelay: 0,
-        where: "onSelf",
-        count: 2,
-        angleStep: 360 / 2,
+        type: "spawnAtOnce",
+        abilityDelay: 2,
+        count: 1,
+        where: "randomPoint",
+        angleStep: 0,
       },
     });
     this.addComponent("Relation", { parentChar: parentID });

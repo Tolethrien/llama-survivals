@@ -15,7 +15,7 @@ export default class Archer extends DogmaEntity {
     this.addComponent("Fraction", { team: "enemy" });
     this.addComponent("Rigid", { speed: 350 });
     this.addComponent("CharacterStats", {
-      maxHP: 100,
+      maxHP: 10,
       minHP: 0,
       damageIncrease: 0,
       DamageTypeIncrease: {
@@ -45,7 +45,7 @@ export default class Archer extends DogmaEntity {
       personalSpace: 1.2,
     });
     this.addComponent("Equipment", {
-      slots: ["ArrowMachine"],
+      slots: ["Fireball"],
     });
     this.addComponent("Collider", {
       shape: "rect",

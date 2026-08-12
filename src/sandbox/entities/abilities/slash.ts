@@ -14,7 +14,7 @@ export default class Slash extends DogmaEntity {
       },
       attackMeta: {
         baseDmg: 12,
-        lifeSpan: 1,
+        lifeSpan: 0.1,
         attackName: "skull",
         hitType: "pierce",
         attackRange: "melee",
