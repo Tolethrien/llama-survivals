@@ -50,7 +50,7 @@ export default class AttackDirector extends DogmaSystem {
       }
       if (!relation.parentChar || !combatList.has(relation.parentChar)) return;
       this.startBurst(ability, relation);
-      ability.cooldown = ability.abilityDelay;
+      ability.cooldown = this.getEffectiveCooldown(ability, relation);
     });
   }
 
@@ -72,6 +72,7 @@ export default class AttackDirector extends DogmaSystem {
       ability.burstTimer = 0;
       return;
     }
+    ability.burstFaceDir = undefined;
     for (let i = 0; i < ability.spawnMode.count; i++) {
       this.generateAbilityAttack(ability, relation, i);
     }
@@ -82,7 +83,11 @@ export default class AttackDirector extends DogmaSystem {
     relation: SystemComponent<"Relation">,
     dt: number,
   ) {
-    if (ability.spawnMode.type !== "spawnOnDelay") return;
+    if (ability.spawnMode.type !== "spawnOnDelay") {
+      ability.burstRemaining = 0;
+      ability.burstFaceDir = undefined;
+      return;
+    }
     ability.burstTimer -= dt;
     if (ability.burstTimer > 0) return;
     this.generateAbilityAttack(ability, relation, ability.burstIndex);
@@ -92,6 +97,17 @@ export default class AttackDirector extends DogmaSystem {
     if (ability.burstRemaining <= 0) ability.burstFaceDir = undefined;
   }
 
+  private getEffectiveCooldown(
+    ability: SystemComponent<"Ability">,
+    relation: SystemComponent<"Relation">,
+  ): number {
+    const casterStats = this.getComponent(
+      relation.parentChar!,
+      "CharacterStats",
+    );
+    const swingSpeedInc = casterStats?.swingSpeedInc ?? 0;
+    return ability.abilityDelay / (1 + swingSpeedInc);
+  }
   private generateAbilityAttack(
     ability: SystemComponent<"Ability">,
     relation: SystemComponent<"Relation">,

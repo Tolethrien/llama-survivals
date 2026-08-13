@@ -10,6 +10,7 @@ export default class UINode extends DogmaComponent {
   children: NodeDescriptor["children"];
   interactive: NodeDescriptor["interactive"];
   value: string;
+  subValue: string;
   constructor(
     internal: InternalDCProps,
     props: Omit<NodeDescriptor, "layer | parent">,
@@ -25,5 +26,6 @@ export default class UINode extends DogmaComponent {
     this.children = props.children ?? [];
     this.interactive = props.interactive;
     this.value = "";
+    this.subValue = "";
   }
 }

@@ -12,8 +12,8 @@ export default class VoidSpawn extends DogmaEntity {
         movementSpeed: 300,
       },
       attackMeta: {
-        baseDmg: 15,
-        lifeSpan: 10,
+        baseDmg: 8,
+        lifeSpan: 4,
         attackName: "vortex",
         hitType: "pierce",
         attackRange: "melee",

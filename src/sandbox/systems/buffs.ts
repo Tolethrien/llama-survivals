@@ -18,6 +18,7 @@ export class Buffs extends DogmaSystem {
       callback: this.buffRender.bind(this),
       phase: "render",
     });
+    this.applyAssignedBuffs();
   }
   private update() {
     const buffs = this.getComponentList("BuffList");
@@ -26,7 +27,6 @@ export class Buffs extends DogmaSystem {
     buffs.forEach((component) => {
       for (let i = component.buffs.length - 1; i >= 0; i--) {
         const buffEntry = component.buffs[i];
-        console.log("tick");
         if (buffEntry.type !== "time") continue;
         buffEntry.currentTime -= dt;
         if (buffEntry.currentTime <= 0) {
@@ -59,5 +59,14 @@ export class Buffs extends DogmaSystem {
         tint: [255, 255, 255, alpha * 255],
       });
     }
+  }
+  private applyAssignedBuffs() {
+    const components = this.getComponentList("BuffList");
+    components?.forEach((component) => {
+      if (component.buffs.length === 0) return;
+      component.buffs.forEach((buff) => {
+        BUFF_POOL[buff.name].onApply(component.ID, this);
+      });
+    });
   }
 }

@@ -136,11 +136,9 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
     label: "+2 skulls",
     apply: (ability) => {
       ability.spawnMode.count += 2;
-      ability.spawnMode.angleStep = ability.spawnMode.count / 360;
-      if (ability.attackBehavior.name !== "orbit") return;
-      ability.attackBehavior.orbitSpeed += 25;
+      ability.spawnMode.angleStep = 360 / ability.spawnMode.count;
     },
-    isMaxed: (ability) => ability.spawnMode.count <= 6,
+    isMaxed: (ability) => ability.spawnMode.count >= 6,
   },
   skullsLvl3: {
     abilityTag: "Skulls",
@@ -149,8 +147,8 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
     apply: (ability) => {
       if (ability.attackBehavior.name !== "orbit") return;
       ability.attackBehavior.orbitSpeed *= 1.3;
-      ability.attackBehavior.radius.x * -1.2;
-      ability.attackBehavior.radius.y * -1.2;
+      ability.attackBehavior.radius.x *= -1.2;
+      ability.attackBehavior.radius.y *= -1.2;
     },
     isMin: (ability) => ability.spawnMode.count === 6,
     once: true,
@@ -158,9 +156,9 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
   auraLvl1: {
     abilityTag: "Aura",
     kind: "abilityUpgrade",
-    label: "aura size +2%",
+    label: "aura size +10%",
     apply: (ability) => {
-      ability.sizeMultiplier = (ability.sizeMultiplier ?? 1) * 1.02;
+      ability.sizeMultiplier = (ability.sizeMultiplier ?? 1) * 1.1;
     },
   },
   auraLvl2: {
@@ -177,7 +175,7 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
     kind: "abilityUpgrade",
     label: "tick rate -30%",
     apply: (ability) => {
-      ability.abilityDelay *= 0.3;
+      ability.abilityDelay *= 0.7;
     },
     once: true,
   },
@@ -198,7 +196,7 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
     label: "4 directions instead of 2",
     apply: (ability) => {
       ability.spawnMode.count = 4;
-      ability.spawnMode.angleStep = ability.spawnMode.count / 360;
+      ability.spawnMode.angleStep = 360 / ability.spawnMode.count;
     },
     isMaxed: (ability) => ability.spawnMode.count === 4,
   },
@@ -244,5 +242,26 @@ export const UPGRADE_POOL: Record<string, UpgradeDefinition> = {
     },
     isMin: (ability) => ability.spawnMode.count === 10,
     once: true,
+  },
+  dmgIncrease: {
+    kind: "statUpgrade",
+    label: "+5% damage",
+    apply: (stats) => {
+      stats.damageIncrease += 0.05;
+    },
+  },
+  swingSpeed: {
+    kind: "statUpgrade",
+    label: "+5% swing speed",
+    apply: (stats) => {
+      stats.swingSpeedInc += 0.05;
+    },
+  },
+  coinRadius: {
+    kind: "statUpgrade",
+    label: "+15% coin pickup radius",
+    apply: (stats) => {
+      stats.coinCollectRadius *= 1.15;
+    },
   },
 };

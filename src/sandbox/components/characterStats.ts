@@ -9,6 +9,8 @@ interface CharStats {
   resist: Record<AttackMeta["damageType"], number>;
   maxResist: Record<AttackMeta["damageType"], number>;
   coinCollectRadius: number;
+  healOnKill: number;
+  passiveHeal: number;
 }
 interface StatsProps {
   minHP: CharStats["minHP"];
@@ -19,6 +21,8 @@ interface StatsProps {
   resist: CharStats["resist"];
   maxResist: CharStats["maxResist"];
   coinCollectRadius?: CharStats["coinCollectRadius"];
+  healOnKill?: CharStats["healOnKill"];
+  passiveHeal?: CharStats["passiveHeal"];
 }
 export default class CharacterStats extends DogmaComponent {
   public minHP: CharStats["minHP"];
@@ -30,6 +34,8 @@ export default class CharacterStats extends DogmaComponent {
   public resist: CharStats["resist"];
   public maxResist: CharStats["maxResist"];
   public coinCollectRadius: CharStats["coinCollectRadius"];
+  public healOnKill: CharStats["healOnKill"];
+  public passiveHeal: CharStats["passiveHeal"];
   constructor(internalProps: InternalDCProps, props: StatsProps) {
     super(internalProps);
     this.minHP = props.minHP;
@@ -41,5 +47,7 @@ export default class CharacterStats extends DogmaComponent {
     this.resist = props.resist;
     this.maxResist = props.maxResist;
     this.coinCollectRadius = props.coinCollectRadius ?? 0;
+    this.healOnKill = props.healOnKill ?? 0.005;
+    this.passiveHeal = props.passiveHeal ?? 0.0001;
   }
 }

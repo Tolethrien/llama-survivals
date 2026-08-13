@@ -13,7 +13,7 @@ export default class BananaSpread extends DogmaEntity {
         movementSpeed: 400,
       },
       attackMeta: {
-        baseDmg: 10,
+        baseDmg: 14,
         lifeSpan: 2,
         attackName: "fireball",
         hitType: "hit",

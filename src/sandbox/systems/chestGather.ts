@@ -8,8 +8,9 @@ import Draw from "@/core/aurora/draw";
 import { assert } from "@/utils/utils";
 import { ChestResetEvent } from "./itemSwap";
 
-const ROLL_DURATION = 3;
-const DECAY_DURATION = 8;
+const ROLL_DURATION = 1.5;
+const DECAY_DURATION = 20;
+const HOLD_DURATION = 1;
 const ITEM_KEYS = Object.keys(ITEM_POOL) as (keyof typeof ITEM_POOL)[];
 const BUTTON_SIZE = 20;
 const BUTTON_GAP = 10;
@@ -28,7 +29,7 @@ export default class ChestGather extends DogmaSystem {
       name: "chestReroll",
       key: "r",
       mods: "NoMod",
-      holdDuration: 2,
+      holdDuration: HOLD_DURATION,
     });
     InputManager.bindAction({ name: "chestPickup", key: "e", mods: "NoMod" });
     this.subscribeToPhase({

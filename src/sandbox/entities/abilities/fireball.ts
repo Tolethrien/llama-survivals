@@ -13,7 +13,7 @@ export default class Fireball extends DogmaEntity {
         movementSpeed: 500,
       },
       attackMeta: {
-        baseDmg: 10,
+        baseDmg: 20,
         lifeSpan: 2,
         attackName: "fireball",
         hitType: "hit",

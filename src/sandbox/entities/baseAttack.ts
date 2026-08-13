@@ -28,9 +28,14 @@ export default class BaseAttack extends DogmaEntity {
     this.addTag(props.attackMeta.attackName);
     const displayData: AttackEntry =
       AttackShapeList[props.attackMeta.attackName];
+    const sizeMultiplier = props.transform.sizeMultiplier;
+    const scaledSize: Size2D = {
+      width: displayData.size.width * sizeMultiplier,
+      height: displayData.size.height * sizeMultiplier,
+    };
     this.addComponent("Transform", {
       position: props.transform.position,
-      size: displayData.size,
+      size: scaledSize,
     });
     this.addComponent("Relation", {
       parentChar: props.casterID,
@@ -51,7 +56,12 @@ export default class BaseAttack extends DogmaEntity {
     });
     this.addComponent("Collider", {
       shape: displayData.collider.shape,
-      sizeOffset: displayData.collider.sizeOffset,
+      sizeOffset: displayData.collider.sizeOffset
+        ? {
+            width: displayData.collider.sizeOffset.width * sizeMultiplier,
+            height: displayData.collider.sizeOffset.height * sizeMultiplier,
+          }
+        : undefined,
       posOffset: displayData.collider.posOffset,
     });
     const attackBehavior = props.attackBehavior;

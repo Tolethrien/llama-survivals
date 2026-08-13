@@ -9,7 +9,7 @@ export default class Archer extends DogmaEntity {
     super();
     this.addComponent("Transform", {
       position: props.position,
-      size: { height: MobCrops.player.height, width: MobCrops.player.width },
+      size: { height: 128 * 0.8, width: 64 * 0.8 },
     });
     this.addTag("enemy");
     this.addComponent("Fraction", { team: "enemy" });
@@ -17,7 +17,7 @@ export default class Archer extends DogmaEntity {
     this.addComponent("CharacterStats", {
       maxHP: 10,
       minHP: 0,
-      damageIncrease: 0,
+      damageIncrease: -0.25,
       DamageTypeIncrease: {
         cold: 0,
         energy: 0,
@@ -35,7 +35,7 @@ export default class Archer extends DogmaEntity {
         poison: 0,
       },
       resist: { cold: 0, energy: 0, fire: 0, heal: 0, physical: 0, poison: 0 },
-      swingSpeedInc: 0,
+      swingSpeedInc: -0.5,
     });
     this.addComponent("EnemyAI", {
       pushForce: 6,
@@ -49,8 +49,8 @@ export default class Archer extends DogmaEntity {
     });
     this.addComponent("Collider", {
       shape: "rect",
-      sizeOffset: { width: -15, height: -10 },
-      posOffset: { x: 0, y: 5 },
+      sizeOffset: { width: -25, height: -20 },
+      posOffset: { x: 0, y: 10 },
     });
     this.addComponent("Sprite", {
       spriteName: "mobs",

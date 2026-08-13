@@ -8,7 +8,7 @@ export default class Player extends DogmaEntity {
     const pos: Position2D = { x: 1300, y: 1300 };
     this.setMarker("Player");
     this.addTag("Player");
-    // this.addTag("invincible");
+    this.addTag("invincible");
     this.addTag("timeImmune");
     this.addComponent("Transform", {
       position: pos,
@@ -39,10 +39,12 @@ export default class Player extends DogmaEntity {
       swingSpeedInc: 0,
       coinCollectRadius: 100,
     });
-    this.addComponent("BuffList");
+    this.addComponent("BuffList", {
+      list: [{ name: "noobie", timer: 60, type: "time" }],
+    });
     this.addComponent("Equipment", {
       slots: ["Fireball"],
-      abilitiesCap: 4,
+      abilitiesCap: 5,
       items: [
         { amount: 0, item: undefined },
         { amount: 0, item: undefined },

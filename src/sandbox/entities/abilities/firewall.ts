@@ -11,8 +11,8 @@ export default class FireWall extends DogmaEntity {
         name: "static",
       },
       attackMeta: {
-        baseDmg: 15,
-        lifeSpan: 10,
+        baseDmg: 10,
+        lifeSpan: 4,
         attackName: "firewall",
         hitType: "pierce",
         attackRange: "melee",

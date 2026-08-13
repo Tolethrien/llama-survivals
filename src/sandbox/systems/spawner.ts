@@ -1,5 +1,8 @@
 import EntityManager from "@/core/dogma/entityManager";
-import DogmaSystem, { InternalDSProps } from "@/core/dogma/system";
+import DogmaSystem, {
+  InternalDSProps,
+  SystemComponent,
+} from "@/core/dogma/system";
 import Time from "@/core/engine/time";
 import Archer from "../entities/enemies/archer";
 import AuroraCamera from "@/core/aurora/camera";
@@ -7,6 +10,7 @@ import AxiomMath from "@/core/axiom/math";
 import Ork from "../entities/enemies/ork";
 import Draw from "@/core/aurora/draw";
 import Aurora from "@/core/aurora/core";
+import Vec2 from "@/core/axiom/vec2";
 
 type ViewSide = "top" | "right" | "bottom" | "left";
 export type BattleProgressData = {
@@ -19,25 +23,39 @@ export type BattleProgressData = {
 export type LvlUpEvent = {
   lvls: number;
 };
-const LVL_MULTI = 10;
-const ENEMY_MULTI = 10;
-const BASE_SPAWN_DELAY = 1; // na starcie: ~1 spawn / sekundę
-const MIN_SPAWN_DELAY = 0.1; // najszybsze możliwe tempo
-const SPAWN_RATE_CURVE = 0.005; // o ile spawnDelay maleje na sekundę przeżycia
 
+const LVL_MULTI = 10;
+
+// tempo bazowe (throughput mobów/s, niezależne od kształtu fal)
+const BASE_SPAWN_DELAY = 3; // na starcie: ~1 mob / 3s
+const MIN_SPAWN_DELAY = 0.1; // najszybsze możliwe "per-mob" tempo
+const SPAWN_RATE_CURVE = 0.1; // o ile spawnDelay maleje na sekundę przeżycia
+
+// kształt fal: 0 = dużo małych fal (jak dawniej, ~1 mob na tick), 1 = mało dużych fal
+const WAVE_SHAPE = 0.8;
+const MAX_WAVE_FACTOR = 12; // maks. zgrupowanie przy WAVE_SHAPE = 1
+const WAVE_SIZE_GROWTH_PER_MIN = 2; // dodatkowy wzrost rozmiaru fali w czasie, niezależny od sliderka
+const WAVE_SHAPE_RAMP_TIME = 90; // jak dlugo zajmie dojscie do docelowgo kształtu fali
+const ATTACK_BASELINE = 0.15; // jak mocno wrogowie wychodzą na front graczowi
+const SPAWN_PADDING = 100;
 const BASE_CAP = 20;
 const CAP_GROWTH_PER_MIN = 15; // ile capu przybywa na minutę przeżycia
+
 export default class Spawner extends DogmaSystem {
-  private spawnDelay: number = 0.1; //s
   private currentTime: number = 0;
   private lvlCheckInterval: number = 1; // s
   private lvlCheckTimer: number = 0;
   private pendingLevelUps: number = 0;
   private elapsedTime = 0;
+  private debugLogInterval = 5;
+  private debugLogTimer = 0;
+  declare private playerRigid: SystemComponent<"Rigid">;
   declare private battleProgressData: BattleProgressData;
+
   constructor(internal: InternalDSProps) {
     super(internal);
   }
+
   public onStart(): void {
     this.subscribeToPhase({
       phase: "update",
@@ -60,40 +78,86 @@ export default class Spawner extends DogmaSystem {
       "battleProgressData",
       this.battleProgressData,
     );
+    this.playerRigid = this.getComponentWithMarker("Player", "Rigid")!;
   }
+
   private spawnerUpdater() {
     const dt = Time.getDeltaTime();
     this.elapsedTime += dt;
     this.tickLvlCheck(dt);
     this.spawn(dt);
+    this.tickDebugLog(dt);
   }
+
   private spawn(dt: number) {
     this.currentTime -= dt;
     if (this.currentTime <= 0) {
       this.spawnWave();
-      this.currentTime = this.getCurrentSpawnDelay();
+      this.currentTime = this.getCurrentWaveInterval();
     }
   }
+
   private spawnWave() {
     const enemies = this.getComponentsWithTags("Transform", ["enemy"]);
-    if (enemies.size >= this.getCurrentCap()) return;
-    const pos = this.getRandomOutsideViewPosition();
-    const isOrk = AxiomMath.randomBool(0.8);
-    const mob = isOrk
-      ? new Ork({ position: pos })
-      : new Archer({ position: pos });
-    EntityManager.spawnEntity(mob, "battle");
+    const cap = this.getCurrentCap();
+    if (enemies.size >= cap) return;
+
+    const waveSize = Math.min(this.getCurrentWaveSize(), cap - enemies.size);
+    const side = this.pickRandomSide(); // ta sama strona dla całej fali
+
+    for (let i = 0; i < waveSize; i++) {
+      const pos = this.getRandomOutsideViewPosition(side, SPAWN_PADDING);
+      const isOrk = AxiomMath.randomBool(0.8);
+      const mob = isOrk
+        ? new Ork({ position: pos })
+        : new Archer({ position: pos });
+      EntityManager.spawnEntity(mob, "battle");
+    }
   }
+
+  private getCurrentWaveSize(): number {
+    const rampT = Math.min(1, this.elapsedTime / WAVE_SHAPE_RAMP_TIME);
+    const shape = WAVE_SHAPE * rampT;
+    const factor = AxiomMath.lerp(1, MAX_WAVE_FACTOR, shape);
+
+    const minutes = this.elapsedTime / 60;
+    return Math.max(1, Math.round(factor + WAVE_SIZE_GROWTH_PER_MIN * minutes));
+  }
+
+  private getCurrentWaveInterval(): number {
+    return this.getCurrentSpawnDelay() * this.getCurrentWaveSize();
+  }
+
   private getCurrentCap(): number {
     const minutes = this.elapsedTime / 60;
     return BASE_CAP + CAP_GROWTH_PER_MIN * minutes;
   }
+
   private getCurrentSpawnDelay(): number {
     return Math.max(
       MIN_SPAWN_DELAY,
       BASE_SPAWN_DELAY - SPAWN_RATE_CURVE * this.elapsedTime,
     );
   }
+
+  private tickDebugLog(dt: number) {
+    this.debugLogTimer -= dt;
+    if (this.debugLogTimer > 0) return;
+    this.debugLogTimer = this.debugLogInterval;
+
+    const enemies = this.getComponentsWithTags("Transform", ["enemy"]);
+    console.table({
+      elapsed: this.formatTime(this.elapsedTime),
+      "elapsed (s)": this.elapsedTime.toFixed(1),
+      "per-mob delay (s)": this.getCurrentSpawnDelay().toFixed(3),
+      "wave size": this.getCurrentWaveSize(),
+      "wave interval (s)": this.getCurrentWaveInterval().toFixed(3),
+      "current cap": Math.floor(this.getCurrentCap()),
+      "enemies on map": enemies.size,
+      "player lvl": this.battleProgressData.lvl,
+    });
+  }
+
   private getRandomOutsideViewPosition(
     side?: ViewSide,
     padding = 0,
@@ -124,6 +188,7 @@ export default class Spawner extends DogmaSystem {
         };
     }
   }
+
   private tickLvlCheck(dt: number) {
     const gained = this.validateLvl();
     this.pendingLevelUps += gained;
@@ -138,10 +203,30 @@ export default class Spawner extends DogmaSystem {
       this.lvlCheckTimer = this.lvlCheckInterval;
     }
   }
+
   private pickRandomSide(): ViewSide {
-    const sides: ViewSide[] = ["top", "right", "bottom", "left"];
-    return sides[AxiomMath.randomInt(0, 3)];
+    const vel = this.playerRigid.velocity;
+    if (vel.length() === 0) {
+      const sides: ViewSide[] = ["top", "right", "bottom", "left"];
+      return sides[AxiomMath.randomInt(0, 3)];
+    }
+
+    const dir = vel.clone().normalize();
+    const SIDE_DIRS: Record<ViewSide, Vec2> = {
+      top: Vec2.create(0, -1),
+      bottom: Vec2.create(0, 1),
+      left: Vec2.create(-1, 0),
+      right: Vec2.create(1, 0),
+    };
+
+    const sides = Object.keys(SIDE_DIRS) as ViewSide[];
+    const weights = sides.map(
+      (side) => Math.max(0, dir.dot(SIDE_DIRS[side])) + ATTACK_BASELINE,
+    );
+
+    return AxiomMath.weightedRandom(sides, weights);
   }
+
   private validateLvl() {
     const { currentLvlXP, lvl, nextLvlMultiplier } = this.battleProgressData;
 
@@ -160,14 +245,17 @@ export default class Spawner extends DogmaSystem {
       this.battleProgressData.nextLvlMultiplier * this.battleProgressData.lvl;
     return k;
   }
+
   private formatTime(seconds: number): string {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, "0")}`;
   }
+
   private renderUI() {
     this.renderInterface();
   }
+
   private renderInterface() {
     const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
     const hp = AxiomMath.map(stats.currentHP, 0, stats.maxHP, 0, 50);
@@ -226,11 +314,10 @@ export default class Spawner extends DogmaSystem {
       tint: [105, 0, 0, 255],
     });
 
-    // --- boks ze statami, lewy dolny róg ---
     // --- boks ze statami, prawy dolny róg, obok paska ---
     const boxWidth = 90;
-    const boxHeight = 90; // +20 na nową linię
-    const boxX = barX - boxWidth - 2; // 10px odstępu od paska
+    const boxHeight = 90;
+    const boxX = barX - boxWidth - 2;
     const boxY = Aurora.canvas.height - boxHeight - 20;
 
     Draw.guiRect({

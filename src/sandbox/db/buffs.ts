@@ -86,5 +86,23 @@ export const BUFF_POOL = {
       rigid.speed += 50;
     },
   },
+  noobie: {
+    label: "you're new here - +40% dmg, +25% attack speed for 90s",
+    crop: icons.tigerFaceColor,
+    onApply: (_, system) => {
+      const stats = system.getComponentWithMarker("Player", "CharacterStats")!;
+      stats.damageIncrease += 0.4;
+      stats.swingSpeedInc += 0.25;
+      stats.healOnKill += 0.1;
+      stats.passiveHeal += 0.01;
+    },
+    onExpire: (_, system) => {
+      const stats = system.getComponentWithMarker("Player", "CharacterStats")!;
+      stats.damageIncrease -= 0.4;
+      stats.swingSpeedInc -= 0.25;
+      stats.healOnKill -= 0.1;
+      stats.passiveHeal -= 0.01;
+    },
+  },
 } satisfies Record<string, BuffDefinition>;
 export const BUFF_KEYS = Object.keys(BUFF_POOL) as (keyof typeof BUFF_POOL)[];

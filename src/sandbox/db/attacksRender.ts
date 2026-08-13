@@ -22,7 +22,7 @@ export const AttackShapeList = {
       width: spells.fireball.width * 1.5,
       height: spells.fireball.height * 1.5,
     },
-    collider: { shape: "circle" },
+    collider: { shape: "rect" },
   },
 
   skull: {

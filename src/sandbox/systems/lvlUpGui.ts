@@ -12,7 +12,21 @@ import { UPGRADE_POOL, UpgradeDefinition } from "../db/upgradePool";
 import { abilities } from "../configs";
 import AxiomMath from "@/core/axiom/math";
 import EntityManager from "@/core/dogma/entityManager";
+import FontGen from "@/core/aurora/renderer/fontGen";
+import Aurora from "@/core/aurora/core";
+
 const BUTTON_TAGS = ["buttonA", "buttonB", "buttonC"];
+
+const PADDING = 40;
+const SECTION_GAP = 24;
+const CARD_WIDTH = 240;
+const CARD_HEIGHT = 260;
+const CARD_GAP = 24;
+const CARD_INNER_PADDING = 18;
+const HEADER_FONT_SIZE = 19;
+const BODY_FONT_SIZE = 16;
+const LINE_HEIGHT = 22;
+const TITLE_HEIGHT = 90;
 
 export type PlayerUpgradeState = {
   ownedTags: Set<keyof typeof abilities>;
@@ -28,6 +42,8 @@ export default class LvlUpGui extends DogmaSystem {
   declare private rootID: Symbol;
   declare private playerID: Symbol;
   private currentChoices: [string, UpgradeDefinition][] = [];
+  private hoveredCardID: Symbol | undefined;
+  private titleInitialized = false;
   constructor(internal: InternalDSProps) {
     super(internal);
   }
@@ -46,10 +62,20 @@ export default class LvlUpGui extends DogmaSystem {
 
   private update() {
     const data = this.getSharedData<UINodeHoverData>("scene", "UINodeHovered")!;
+    this.updateHoverState(data);
     this.updateEvents();
     this.updateInput(data);
   }
+  private updateHoverState(data: UINodeHoverData) {
+    if (data.currentRoot !== this.rootID || !data.currentFrame) {
+      this.hoveredCardID = undefined;
+      return;
+    }
+    const node = this.getComponent(data.currentFrame, "UINode");
+    this.hoveredCardID = node?.interactive ? data.currentFrame : undefined;
+  }
   private render() {
+    this.ensureTitleText();
     const node = this.getComponent(this.rootID, "UINode");
     if (!node || !node.active) return;
     this.DrawNode(node.ID);
@@ -59,27 +85,109 @@ export default class LvlUpGui extends DogmaSystem {
     const node = this.getComponent(ID, "UINode");
     if (!node || !node.visible) return;
 
+    const tint =
+      ID === this.hoveredCardID
+        ? this.brightenTint(node.visual.tint)
+        : node.visual.tint;
+
     Draw.guiRect({
       position: { x: node.transform.x, y: node.transform.y },
       size: { width: node.transform.width, height: node.transform.height },
       background: node.visual.type === "image" ? node.visual.sprite : undefined,
       crop: node.visual.type === "image" ? node.visual.crop : undefined,
-      tint: node.visual.tint,
+      tint,
     });
-    if (node.value) {
+
+    const isTitle = node.tags.has("lvlUpTitle");
+    const textX = node.transform.x + CARD_INNER_PADDING;
+    const maxTextWidth = node.transform.width - CARD_INNER_PADDING * 2;
+    let textY = node.transform.y + CARD_INNER_PADDING;
+
+    if (node.subValue) {
+      const x = isTitle
+        ? this.centeredX(
+            node.subValue,
+            HEADER_FONT_SIZE,
+            node.transform.x,
+            node.transform.width,
+          )
+        : textX;
       Draw.guiText({
-        position: {
-          x: node.transform.x + 10,
-          y: node.transform.y + 10,
-          mode: "pixel",
-        },
+        position: { x, y: textY, mode: "pixel" },
         font: "lato",
-        fontColor: [255, 255, 255, 255],
-        fontSize: { size: 16, mode: "pixel" },
-        text: node.value,
+        fontColor: [255, 200, 110, 255],
+        fontSize: { size: HEADER_FONT_SIZE, mode: "pixel" },
+        text: node.subValue,
+      });
+      textY += HEADER_FONT_SIZE + 8;
+      if (!isTitle) {
+        Draw.guiRect({
+          position: { x: textX, y: textY },
+          size: { width: maxTextWidth, height: 1 },
+          tint: [255, 255, 255, 60],
+        });
+      }
+      textY += 10;
+    }
+
+    if (node.value) {
+      const lines = this.wrapText(node.value, maxTextWidth, BODY_FONT_SIZE);
+      lines.forEach((line) => {
+        const x = isTitle
+          ? this.centeredX(
+              line,
+              BODY_FONT_SIZE,
+              node.transform.x,
+              node.transform.width,
+            )
+          : textX;
+        Draw.guiText({
+          position: { x, y: textY, mode: "pixel" },
+          font: "lato",
+          fontColor: [225, 225, 232, 255],
+          fontSize: { size: BODY_FONT_SIZE, mode: "pixel" },
+          text: line,
+        });
+        textY += LINE_HEIGHT;
       });
     }
-    node.children?.forEach((ID) => this.DrawNode(ID));
+
+    node.children?.forEach((childID) => this.DrawNode(childID));
+  }
+  private centeredX(
+    text: string,
+    fontSize: number,
+    boxX: number,
+    boxWidth: number,
+  ): number {
+    const { width } = FontGen.measureText({
+      fontName: "lato",
+      fontSize: fontSize + 8, // ten sam offset co guiText w trybie "pixel"
+      text,
+    });
+    return boxX + (boxWidth - width) / 2;
+  }
+  private wrapText(text: string, maxWidth: number, fontSize: number): string[] {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let current = "";
+    const renderedFontSize = fontSize + 8;
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      const { width } = FontGen.measureText({
+        fontName: "lato",
+        fontSize: renderedFontSize,
+        text: candidate,
+      });
+      if (width > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
   }
   private updateEvents() {
     const events = this.events.getCascade<LvlUpEvent[]>("lvlUpEvent");
@@ -110,75 +218,114 @@ export default class LvlUpGui extends DogmaSystem {
     }
   }
   private buildGUITree() {
+    const contentWidth = CARD_WIDTH * 3 + CARD_GAP * 2;
+    const width = contentWidth + PADDING * 2;
+    const height = PADDING * 2 + TITLE_HEIGHT + SECTION_GAP + CARD_HEIGHT;
+
+    const rootX = (Aurora.canvas.width - width) / 2;
+    const rootY = (Aurora.canvas.height - height) / 2;
+    const titleY = rootY + PADDING;
+    const cardsY = titleY + TITLE_HEIGHT + SECTION_GAP;
+
+    const cardChildren = BUTTON_TAGS.map((tag, i) => ({
+      active: true,
+      visible: true,
+      visual: { type: "color" as const, tint: [45, 48, 62, 255] as RGBA },
+      transform: {
+        x: rootX + PADDING + i * (CARD_WIDTH + CARD_GAP),
+        y: cardsY,
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+      },
+      interactive: true,
+      tags: [tag],
+    }));
+
     const rootID = GuiManager.build({
       active: false,
       visible: true,
-      transform: {
-        x: this.framePos.x,
-        y: this.framePos.y,
-        width: 600,
-        height: 400,
-      },
-      visual: { type: "color", tint: [255, 0, 255, 255] },
+      transform: { x: rootX, y: rootY, width, height },
+      visual: { type: "color", tint: [20, 20, 26, 235] },
       interactive: false,
       children: [
         {
           active: true,
           visible: true,
-          visual: { type: "color", tint: [255, 100, 255, 255] },
+          visual: { type: "color", tint: [0, 0, 0, 0] },
           transform: {
-            x: this.framePos.x + 50,
-            y: this.framePos.y + 50,
-            width: 100,
-            height: 100,
+            x: rootX + PADDING,
+            y: titleY,
+            width: contentWidth,
+            height: TITLE_HEIGHT,
           },
-          interactive: true,
-          tags: [BUTTON_TAGS[0]],
+          interactive: false,
+          tags: ["lvlUpTitle"],
         },
-        {
-          active: true,
-          visible: true,
-          visual: { type: "color", tint: [255, 100, 255, 255] },
-          transform: {
-            x: this.framePos.x + 50,
-            y: this.framePos.y + 150 + 10,
-            width: 100,
-            height: 100,
-          },
-          interactive: true,
-          tags: [BUTTON_TAGS[1]],
-        },
-        {
-          active: true,
-          visible: true,
-          visual: { type: "color", tint: [255, 100, 255, 255] },
-          transform: {
-            x: this.framePos.x + 50,
-            y: this.framePos.y + 250 + 20,
-            width: 100,
-            height: 100,
-          },
-          interactive: true,
-          tags: [BUTTON_TAGS[2]],
-        },
+        ...cardChildren,
       ],
     });
     this.rootID = rootID;
+
+    const [titleID] = this.getComponentsWithTags("UINode", ["lvlUpTitle"]);
+    const titleNode = this.getComponent(titleID, "UINode");
+    if (titleNode) {
+      titleNode.subValue = "LEVEL UP!";
+      titleNode.value = "Choose one of the upgrades below";
+    }
   }
+  private ensureTitleText() {
+    if (this.titleInitialized) return;
+    const [titleID] = this.getComponentsWithTags("UINode", ["lvlUpTitle"]);
+    if (!titleID) return; // encja jeszcze nie zdispatchowana, spróbuj w następnej klatce
+    const titleNode = this.getComponent(titleID, "UINode");
+    if (!titleNode) return;
+    titleNode.subValue = "LEVEL UP!";
+    titleNode.value = "Choose one of the upgrades below";
+    this.titleInitialized = true;
+  }
+
   private rollChoices() {
     const state = this.buildPlayerUpgradeState();
-
     const eligible = Object.entries(UPGRADE_POOL).filter(([key, def]) =>
       this.isUpgradeEligible(key, def, state),
     );
-    this.currentChoices = AxiomMath.pickRandomN(eligible, 3);
+
+    this.currentChoices = this.pickWithNewAbilityCap(eligible, 3, 2);
 
     BUTTON_TAGS.forEach((tag, i) => {
       const [nodeID] = this.getComponentsWithTags("UINode", [tag]);
       const node = this.getComponent(nodeID, "UINode");
       if (!node) return;
-      node.value = this.currentChoices[i]?.[1].label ?? "";
+      const choice = this.currentChoices[i];
+      node.subValue = choice ? this.getUpgradeSourceLabel(choice[1]) : "";
+      node.value = choice?.[1].label ?? "";
     });
+  }
+  private getUpgradeSourceLabel(def: UpgradeDefinition): string {
+    if (def.kind === "statUpgrade") return "Character";
+    return this.formatAbilityName(def.abilityTag);
+  }
+  private formatAbilityName(tag: string): string {
+    return tag.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+  }
+  private pickWithNewAbilityCap(
+    eligible: [string, UpgradeDefinition][],
+    total: number,
+    maxNewAbility: number,
+  ): [string, UpgradeDefinition][] {
+    const shuffled = AxiomMath.pickRandomN(eligible, eligible.length);
+    const result: [string, UpgradeDefinition][] = [];
+    let newAbilityCount = 0;
+
+    for (const entry of shuffled) {
+      if (result.length >= total) break;
+      const isNewAbility = entry[1].kind === "newAbility";
+      if (isNewAbility && newAbilityCount >= maxNewAbility) continue;
+      result.push(entry);
+      if (isNewAbility) newAbilityCount++;
+    }
+
+    return result;
   }
   private applyChoice(index: number) {
     const choice = this.currentChoices[index];
@@ -268,5 +415,13 @@ export default class LvlUpGui extends DogmaSystem {
       this.rollChoices();
       yield;
     }
+  }
+  private brightenTint(tint: RGBA): RGBA {
+    return [
+      Math.min(255, tint[0] + 30),
+      Math.min(255, tint[1] + 30),
+      Math.min(255, tint[2] + 30),
+      tint[3],
+    ];
   }
 }

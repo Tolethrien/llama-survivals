@@ -27,8 +27,8 @@ export default class RenderGame extends DogmaSystem {
     });
     AuroraCamera.scale(0.5);
     Renderer.setPostProcess({
-      vignette: { str: 0.4, radius: 0.85 },
-      chromaticAberration: { str: 0.05 },
+      // vignette: { str: 0.4, radius: 0.85 },
+      // chromaticAberration: { str: 0.05 },
     });
   }
 
@@ -171,13 +171,13 @@ export default class RenderGame extends DogmaSystem {
 
       if (collider.shape === "rect") {
         Draw.rect({
-          position: { x: renderPos.x, y: renderPos.y, z },
+          position: { x: renderPos.x, y: renderPos.y, z: 1 },
           size: { width: box.w, height: box.h },
           tint: debugTint,
         });
       } else {
         Draw.circle({
-          position: { x: renderPos.x, y: renderPos.y, z },
+          position: { x: renderPos.x, y: renderPos.y, z: 1 },
           size: { width: box.w, height: box.w },
           tint: debugTint,
         });

@@ -5,6 +5,7 @@ import DogmaSystem, {
 } from "@/core/dogma/system";
 import { HitEvent } from "./collisions";
 import { CoinSpawnEvent } from "./xPGather";
+import Time from "@/core/engine/time";
 
 export default class DamageCalculator extends DogmaSystem {
   constructor(internalProps: InternalDSProps) {
@@ -12,9 +13,14 @@ export default class DamageCalculator extends DogmaSystem {
   }
   public onStart(): void {
     this.subscribeToPhase({
-      callback: this.calculateDmg.bind(this),
+      callback: this.update.bind(this),
       phase: "update",
     });
+  }
+  private update() {
+    const dt = Time.getDeltaTime();
+    this.calculateDmg();
+    this.passiveRegeneration(dt);
   }
   private calculateDmg() {
     const toRemove = new Set<Symbol>();
@@ -31,7 +37,7 @@ export default class DamageCalculator extends DogmaSystem {
         return;
       }
 
-      const finalDamage = this.calculateDamage(hit, attackerStats, targetStats);
+      const finalDamage = this.getDmgHit(hit, attackerStats, targetStats);
       targetStats.currentHP -= finalDamage;
       if (attack.tracking.hitType === "hit") this.deleteAttack(attack.ID);
       if (targetStats.currentHP <= targetStats.minHP) {
@@ -72,7 +78,7 @@ export default class DamageCalculator extends DogmaSystem {
     EntityManager.removeEntity(ID, "battle");
   }
 
-  private calculateDamage(
+  private getDmgHit(
     hit: HitEvent,
     attacker: SystemComponent<"CharacterStats">,
     target: SystemComponent<"CharacterStats">,
@@ -95,6 +101,17 @@ export default class DamageCalculator extends DogmaSystem {
   private healPlayer() {
     const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
     if (stats.currentHP >= stats.maxHP) return;
-    stats.currentHP += 1;
+    stats.currentHP = Math.min(
+      stats.maxHP,
+      stats.currentHP + stats.maxHP * stats.healOnKill,
+    );
+  }
+  private passiveRegeneration(dt: number) {
+    const stats = this.getComponentWithMarker("Player", "CharacterStats")!;
+    if (stats.currentHP >= stats.maxHP) return;
+    stats.currentHP = Math.min(
+      stats.maxHP,
+      stats.currentHP + stats.maxHP * stats.passiveHeal * dt,
+    );
   }
 }

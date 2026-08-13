@@ -9,10 +9,10 @@ export default class Ork extends DogmaEntity {
     super();
     this.addComponent("Transform", {
       position: props.position,
-      size: { height: 64, width: 32 },
+      size: { height: 128 * 0.8, width: 64 * 0.8 },
     });
     this.addTag("enemy");
-    this.addComponent("Rigid", { speed: 350 });
+    this.addComponent("Rigid", { speed: 300 });
     this.addComponent("Fraction", { team: "enemy" });
     this.addComponent("CharacterStats", {
       maxHP: 25,
@@ -47,7 +47,11 @@ export default class Ork extends DogmaEntity {
     this.addComponent("Equipment", {
       slots: ["Slash"],
     });
-    this.addComponent("Collider", { shape: "rect" });
+    this.addComponent("Collider", {
+      shape: "rect",
+      sizeOffset: { width: -15, height: -30 },
+      posOffset: { x: 0, y: 15 },
+    });
 
     this.addComponent("Sprite", {
       spriteName: "mobs",
